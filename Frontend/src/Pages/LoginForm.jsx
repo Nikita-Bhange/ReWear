@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
 import * as z from "zod";
 import { UserContext } from "../Context/User";
 import AuthLayout from "../Components/AuthLayout";
@@ -18,15 +17,13 @@ const LoginForm = () => {
   const { role: routeRole } = useParams();
   const { login } = useContext(UserContext);
   const [serverError, setServerError] = useState("");
-  const [showResend, setShowResend] = useState(false);
-  const [resendMessage, setResendMessage] = useState("");
+  const [suggestedRole, setSuggestedRole] = useState("");
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
-    getValues,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -48,30 +45,9 @@ const LoginForm = () => {
     navigate(selectedRole === "admin" ? "/login/admin" : "/login");
   };
 
-  const handleResendVerification = async () => {
-    setResendMessage("");
-    setServerError("");
-
-    try {
-      const email = getValues("email");
-      const res = await axios.post("http://localhost:8000/api/auth/resend-verification", {
-        email,
-      });
-
-      setResendMessage(res.data?.message || "Verification email sent");
-    } catch (error) {
-      setServerError(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          "Could not resend verification email."
-      );
-    }
-  };
-
   const onSubmit = async (formData) => {
     setServerError("");
-    setResendMessage("");
-    setShowResend(false);
+    setSuggestedRole("");
 
     try {
       const result = await login(formData);
@@ -85,10 +61,11 @@ const LoginForm = () => {
         result.error?.response?.data?.message ||
         result.error?.response?.data?.error ||
         "Login failed";
-      const verificationCode = result.error?.response?.data?.code;
+      const errorCode = result.error?.response?.data?.code;
+      const expectedRole = result.error?.response?.data?.expectedRole;
 
       setServerError(message);
-      setShowResend(verificationCode === "EMAIL_NOT_VERIFIED");
+      setSuggestedRole(errorCode === "ROLE_MISMATCH" ? expectedRole : "");
     } catch (err) {
       console.error("Login error:", err);
       setServerError("Network error. Please try again.");
@@ -108,9 +85,9 @@ const LoginForm = () => {
     <AuthLayout
       eyebrow="Sign in"
       title="Welcome back"
-      subtitle="Use the verified email you registered with to open your buyer or admin workspace."
+      subtitle="Use your registered email and password to open your buyer or admin workspace."
       sideTitle="Pick up where you left off."
-      sideText="Your session stays behind an Express API, bcrypt-hashed passwords, JWT cookies, and email-verified access."
+      sideText="Your session stays behind an Express API, bcrypt-hashed passwords, and JWT cookie-based auth."
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <button
@@ -136,10 +113,14 @@ const LoginForm = () => {
           </div>
         ) : null}
 
-        {resendMessage ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {resendMessage}
-          </div>
+        {suggestedRole ? (
+          <button
+            type="button"
+            onClick={() => handleRoleChange(suggestedRole)}
+            className="text-left text-sm font-semibold text-sky-700 hover:text-sky-800"
+          >
+            Continue with the {suggestedRole === "admin" ? "admin" : "shopper"} login instead
+          </button>
         ) : null}
 
         <div>
@@ -170,16 +151,6 @@ const LoginForm = () => {
             <p className="mt-2 text-sm text-rose-600">{errors.password.message}</p>
           ) : null}
         </div>
-
-        {showResend ? (
-          <button
-            type="button"
-            onClick={handleResendVerification}
-            className="text-sm font-semibold text-sky-700 hover:text-sky-800"
-          >
-            Resend verification email
-          </button>
-        ) : null}
 
         <button
           className="w-full rounded-2xl bg-[linear-gradient(135deg,_#0f766e,_#0284c7,_#2563eb)] px-4 py-3 text-base font-semibold text-white shadow-[0_18px_34px_rgba(2,132,199,0.24)] transition hover:-translate-y-0.5"

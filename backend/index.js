@@ -1,6 +1,6 @@
+import "dotenv/config";
 import express from "express"
 import cors from 'cors'
-import dotenv from 'dotenv'
 import {db} from "./connect.js"
 import authRoutes from "./routes/authRoute.js";
 import cartRoutes from "./routes/cartRoutes.js";
@@ -12,8 +12,6 @@ import adminRoutes from "./routes/adminRoutes.js"
 import paymentRoutes from "./routes/payment.js"
 import cookieParser from "cookie-parser";
 import profileRoute from "./routes/profileRoute.js";
-import { ensureAuthSchema } from "./utils/ensureAuthSchema.js";
-dotenv.config();
 
 const app = express()
 app.use(express.json())
@@ -46,9 +44,5 @@ app.use('/api/payment', paymentRoutes)
 app.get('/', (req, res) => {
     res.send('Server is alive!');
 });
-
-ensureAuthSchema()
-  .then(() => console.log("Auth schema ready"))
-  .catch((error) => console.error("Auth schema setup failed:", error.message));
 
 app.listen(8000, () => console.log("Server running on port 8000"));

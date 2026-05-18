@@ -3,8 +3,6 @@ import {
   register,
   login,
   logout,
-  verifyEmail,
-  resendVerificationEmail,
 } from "../controllers/auth.js";
 import { protect, adminOnly } from "../middleware/authmiddleware.js";
 import { db } from "../connect.js";
@@ -14,8 +12,6 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
-router.get("/verify-email", verifyEmail);
-router.post("/resend-verification", resendVerificationEmail);
 
 // protected route: return full user details from DB
 router.get("/me", protect, async (req, res) => {
@@ -23,7 +19,7 @@ router.get("/me", protect, async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Not authenticated" });
     const [rows] = await db.promise().query(
-      "SELECT id, username, email, role, is_verified FROM users WHERE id = ? LIMIT 1",
+      "SELECT id, username, email, role FROM users WHERE id = ? LIMIT 1",
       [userId]
     );
     if (!rows.length) return res.status(404).json({ message: "User not found" });

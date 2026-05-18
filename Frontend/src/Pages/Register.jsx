@@ -68,9 +68,7 @@ function Register() {
         { withCredentials: true }
       );
 
-      navigate(
-        `/verify-email?email=${encodeURIComponent(formData.email)}&role=${formData.role}`
-      );
+      navigate(formData.role === "admin" ? "/login/admin" : "/login");
     } catch (err) {
       console.error("Register error:", err);
       setServerError(
@@ -94,9 +92,9 @@ function Register() {
     <AuthLayout
       eyebrow="Create account"
       title="Start with a secure account"
-      subtitle="Register with validated inputs, encrypted passwords, and email verification before first login."
+      subtitle="Register with validated inputs and encrypted passwords, then sign in right away."
       sideTitle="Join the circular marketplace with confidence."
-      sideText="Create a buyer or admin account, verify your email, and keep your access protected from the first session."
+      sideText="Create a buyer or admin account with a simple auth flow backed by bcrypt and JWT."
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <button

@@ -2,7 +2,6 @@ import React from "react"
 import { Routes, Route } from "react-router-dom"
 import LoginForm from "./Pages/LoginForm"
 import Register from "./Pages/Register"
-import VerifyEmail from "./Pages/VerifyEmail"
 import Home from "./Pages/Home"
 import Profile from "./Pages/Profile.jsx"
 import CategoryProduct from "./Pages/CategoryProduct.jsx"
@@ -23,7 +22,6 @@ function App() {
         <Route path="/register/:role" element={<Register />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/login/:role" element={<LoginForm />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/home" element={<Home />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />

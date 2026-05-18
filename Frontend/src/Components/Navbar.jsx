@@ -113,7 +113,7 @@ const Navbar = () => {
             <NavLink className={style} to="/home">
               About us
             </NavLink>
-            <NavLink className={style} to="/cart" className="flex items-center">
+            <NavLink className={style} to="/cart" >
               <ShoppingCartOutlined className="mr-2" /> Cart {cartCount > 0 && `(${cartCount})`}
             </NavLink>
             <NavLink className={style} to="/profile">

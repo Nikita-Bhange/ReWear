@@ -4,9 +4,9 @@ import axios from "axios";
 export const UserContext = createContext()
 
 export const UserContextProvider = ({children}) =>{
-      const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
 
-     const login = async (inputs) => {
+  const login = async (inputs) => {
     try {
       const res = await axios.post(
         "http://localhost:8000/api/auth/login",
@@ -25,7 +25,10 @@ export const UserContextProvider = ({children}) =>{
 
         return { success: true, user: res.data.user };
     } catch (error) {
-      console.error("Login error:", error);
+      const status = error?.response?.status;
+      if (status !== 401 && status !== 403) {
+        console.error("Login error:", error);
+      }
       return { success: false, error };
     }
   };
@@ -56,7 +59,10 @@ export const UserContextProvider = ({children}) =>{
           setUser(null);
         }
       } catch (error) {
-        console.log("User not authenticated");
+        const status = error?.response?.status;
+        if (status !== 401) {
+          console.error("Session check failed:", error);
+        }
         setUser(null);
       }
     };

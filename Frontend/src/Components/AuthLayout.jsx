@@ -32,7 +32,7 @@ const AuthLayout = ({
             <div className="mt-4 space-y-3 text-sm text-white/85">
               <p>React Hook Form + Zod for fast validation.</p>
               <p>Express API with bcrypt hashing and JWT cookie sessions.</p>
-              <p>Email verification protects account access before login.</p>
+              <p>Buyer and admin access stay separated with role-aware sign-in.</p>
             </div>
           </div>
         </aside>
