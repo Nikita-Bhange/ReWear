@@ -51,7 +51,8 @@ const LoginForm = () => {
 
     try {
       const result = await login(formData);
-
+      localStorage.setItem("token", result.token);
+        console.log("Login result:", result);
       if (result.success) {
         navigate(result.user?.role === "admin" ? "/admin/dashboard" : "/home");
         return;

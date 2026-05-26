@@ -5,56 +5,74 @@ import jwt from "jsonwebtoken";
 // Add order details
 export const addOrderDetails = async (req, res) => {
     const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
-    
+
     if (!token) {
         return res.status(401).json({ error: "Not logged in!" });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, userInfo) => {
-        if (err) {
-            return res.status(401).json({ error: "Invalid token!" });
+    let userInfo;
+    try {
+        userInfo = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        return res.status(401).json({ error: "Invalid token!" });
+    }
+
+    try {
+        const pid = Number(req.params.p_id);
+        const userId = userInfo.id;
+        const paymentMethod = req.body.payment_method || "cod";
+
+        if (!Number.isInteger(pid) || pid < 1) {
+            return res.status(400).json({ error: "Invalid product id" });
         }
 
-        try {
-            const pid = req.params.p_id;
-            const sellerId = req.body.seller_id;
-            const userId = userInfo.id;
-            const paymentMethod = req.body.payment_method || "cod";
-            const amount = req.body.amount;
+        const [products] = await db.promise().query(
+            `SELECT id, seller_id, price, status FROM product WHERE id = ? LIMIT 1`,
+            [pid]
+        );
 
-            console.log("Product ID:", pid, "Seller ID:", sellerId, "Buyer ID:", userId);
-
-            if (!sellerId || !pid) {
-                return res.status(400).json({ error: "Missing required fields" });
-            }
-
-            const query = `INSERT INTO order_detail (seller_id, buyer_id, p_id, status, payment_method, amount, date) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-            const values = [
-                sellerId,
-                userId,
-                pid,
-                "Pending",
-                paymentMethod,
-                amount,
-                moment().format("YYYY-MM-DD"),
-            ];
-
-            db.query(query, values, (err, insertResult) => {
-                if (err) {
-                    console.error("Database Error:", err);
-                    return res.status(500).json({ error: "Database operation failed" });
-                }
-
-                res.status(200).json({
-                    message: "Product ordered successfully!",
-                    orderId: insertResult.insertId,
-                });
-            });
-        } catch (error) {
-            console.error("Server Error:", error);
-            res.status(500).json({ error: "Internal server error" });
+        if (products.length === 0) {
+            return res.status(404).json({ error: "Product not found" });
         }
-    });
+
+        const product = products[0];
+
+        if (product.status === "sold") {
+            return res.status(400).json({ error: "Product is already sold" });
+        }
+
+        if (Number(product.seller_id) === Number(userId)) {
+            return res.status(400).json({ error: "You cannot buy your own product" });
+        }
+
+        const query = `
+            INSERT INTO order_detail
+                (seller_id, buyer_id, p_id, status, payment_method, amount, date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        const values = [
+            product.seller_id,
+            userId,
+            pid,
+            "Pending",
+            paymentMethod,
+            product.price,
+            moment().format("YYYY-MM-DD"),
+        ];
+
+        const [insertResult] = await db.promise().query(query, values);
+
+        res.status(200).json({
+            message: "Product ordered successfully!",
+            orderId: insertResult.insertId,
+        });
+    } catch (error) {
+        console.error("Add order error:", error);
+        res.status(500).json({
+            error: "Database operation failed",
+            details: error.message,
+        });
+    }
 };
 
 // Get user orders (both purchased and sold)

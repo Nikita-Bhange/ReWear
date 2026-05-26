@@ -5,15 +5,37 @@ import { ShoppingCartOutlined } from "@mui/icons-material";
 import ImageSlider from "../Components/ImageSlider";
 import Navbar from "../Components/Navbar.jsx";
 
+const parseImages = (rawImage) => {
+  if (!rawImage) return [];
+  if (Array.isArray(rawImage)) return rawImage;
+
+  if (typeof rawImage === "string") {
+    const trimmed = rawImage.trim();
+
+    if (!trimmed) return [];
+    if (!trimmed.startsWith("[")) return [trimmed];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error("Error parsing images:", error);
+      return [];
+    }
+  }
+
+  return [];
+};
+
 const ProductPage = () => {
-    const [product, setProduct] = useState({}); 
+  const [product, setProduct] = useState({});
   const { id } = useParams();
   const location = useLocation();
-  const productId = id || location.state?.productId; 
+  const productId = id || location.state?.productId;
   const [seller, setSeller] = useState({});
-  const [showPopup, setShowPopup] = useState(false); 
+  const [showPopup, setShowPopup] = useState(false);
 
-   useEffect(() => {
+  useEffect(() => {
     const getProduct = async () => {
       if (!productId) return;
       try {
@@ -26,103 +48,74 @@ const ProductPage = () => {
         console.log("Error fetching product:", error);
       }
     };
+
     getProduct();
   }, [productId]);
 
-  // Seller info is now fetched from profiles API or shown from product data
   useEffect(() => {
     if (product.seller_id) {
-      setSeller({ 
-        address: "Seller ID: " + product.seller_id,
-        contact: "Contact seller for details"
+      setSeller({
+        address: `Seller ID: ${product.seller_id}`,
+        contact: "Contact seller for details",
       });
     }
   }, [product.seller_id]);
-  
-   const handleBuyNow = async (p_id, seller_id) => {
-    try {
-      const response = await axios.post(
-        `http://localhost:8000/api/order/${p_id}`,
-        { seller_id },
-        { withCredentials: true }
-      );
-      console.log("Order Response:", response.data);
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        setShowPopup(true);
-      }
-      console.log("Error placing order:", error);
-    }
-  };
 
-  // Ensure images are parsed properly - handle both string JSON and array from database
-  let images = [];
-  try {
-    if (product.image) {
-      if (typeof product.image === 'string') {
-        images = JSON.parse(product.image);
-      } else if (Array.isArray(product.image)) {
-        images = product.image;
-      }
-      images = images.filter(img => typeof img === 'string' && img.trim() !== '');
-    }
-  } catch (error) {
-    console.error("Error parsing images:", error);
-    images = [];
-  }
+  const images = parseImages(product.image).filter(
+    (img) => typeof img === "string" && img.trim() !== ""
+  );
 
   return (
     <>
       <Navbar />
       {showPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="bg-white rounded-2xl p-8 shadow-xl w-[350px] text-center relative">
-            <button onClick={() => setShowPopup(false)} className="absolute top-3 right-4 text-xl">×</button>
-            <h2 className="text-2xl font-bold text-red-500 mb-4">Login Required</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="relative w-[350px] rounded-2xl bg-white p-8 text-center shadow-xl">
+            <button
+              onClick={() => setShowPopup(false)}
+              className="absolute right-4 top-3 text-xl"
+            >
+              x
+            </button>
+            <h2 className="mb-4 text-2xl font-bold text-red-500">Login Required</h2>
             <p className="text-gray-600">Please login to continue.</p>
           </div>
         </div>
       )}
-      <div className="bg-gray-100 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-
-          {/* TOP SECTION */}
-          <div className="flex flex-col lg:flex-row gap-6">
-
-            {/* LEFT – IMAGE SLIDER */}
+      <div className="min-h-screen bg-gray-100">
+        <div className="mx-auto max-w-7xl px-4 py-6">
+          <div className="flex flex-col gap-6 lg:flex-row">
             <div className="lg:w-2/3">
               <ImageSlider images={images} />
             </div>
 
-            {/* RIGHT – PRODUCT INFO */}
             <div className="lg:w-1/3">
-              <div className="bg-white p-6 rounded shadow sticky top-6">
-                <span className="text-xs text-green-600 font-semibold">
+              <div className="sticky top-6 rounded bg-white p-6 shadow">
+                <span className="text-xs font-semibold text-green-600">
                   {product.category || "PRODUCT"} • {product.used_duration || "N/A"}
                 </span>
 
-                <h1 className="text-xl font-bold mt-1">
-                  {product.p_name}
-                </h1>
+                <h1 className="mt-1 text-xl font-bold">{product.p_name}</h1>
 
-                <p className="text-sm text-gray-500 mt-1">
-                  {seller.address || seller.city || "Seller location not available"} • Posted {product.posting_date || "Recently"}
+                <p className="mt-1 text-sm text-gray-500">
+                  {seller.address || seller.city || "Seller location not available"} • Posted{" "}
+                  {product.posting_date || "Recently"}
                 </p>
 
-                <p className="text-3xl font-bold text-blue-600 mt-4">
+                <p className="mt-4 text-3xl font-bold text-blue-600">
                   Rs. {product.price || "0.00"}
                 </p>
 
-                <div className="flex gap-3 mt-4">
-                  <button className="flex-1 bg-teal-500 text-white py-2 rounded font-semibold">
+                <div className="mt-4 flex gap-3">
+                  <button className="flex-1 rounded bg-teal-500 py-2 font-semibold text-white">
                     CALL
                   </button>
-                  <button className="flex-1 border border-blue-600 text-blue-600 py-2 rounded font-semibold">
+                  <button className="flex-1 rounded border border-blue-600 py-2 font-semibold text-blue-600">
                     CHAT
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 text-center text-sm text-gray-600 mt-6">
+                <div className="mt-6 grid grid-cols-3 text-center text-sm text-gray-600">
                   <p>Get all details</p>
                   <p>Schedule a visit</p>
                   <p>Negotiate price</p>
@@ -131,21 +124,17 @@ const ProductPage = () => {
             </div>
           </div>
 
-          {/* TABS */}
-          <div className="bg-white mt-8 rounded shadow p-6">
-            <div className="flex border-b mb-6">
-              <button className="border-b-2 border-blue-600 pb-2 text-blue-600 font-medium">
+          <div className="mt-8 rounded bg-white p-6 shadow">
+            <div className="mb-6 flex border-b">
+              <button className="border-b-2 border-blue-600 pb-2 font-medium text-blue-600">
                 Ad Details
               </button>
-              <button className="ml-6 text-gray-500">
-                Description
-              </button>
+              <button className="ml-6 text-gray-500">Description</button>
             </div>
 
-            {/* AD DETAILS */}
-            <h2 className="text-lg font-semibold mb-4">Ad Details</h2>
+            <h2 className="mb-4 text-lg font-semibold">Ad Details</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 text-sm">
+            <div className="grid grid-cols-1 gap-y-4 text-sm md:grid-cols-2">
               <div>
                 <p className="text-gray-500">Ad ID</p>
                 <p className="font-medium">{product.id || "N/A"}</p>
@@ -164,18 +153,14 @@ const ProductPage = () => {
               </div>
             </div>
 
-            {/* DESCRIPTION */}
             <div className="mt-8">
-              <h2 className="text-lg font-semibold mb-2">
-                Description
-              </h2>
-              <p className="text-gray-600">
-                {product.p_desc || "No description available"}
-              </p>
+              <h2 className="mb-2 text-lg font-semibold">Description</h2>
+              <p className="text-gray-600">{product.p_desc || "No description available"}</p>
             </div>
+
             <div className="flex flex-row">
               <button
-                className="w-[20vw] h-11 mr-4 mb-6 cursor-pointer"
+                className="mr-4 mb-6 h-11 w-[20vw] cursor-pointer"
                 style={{
                   borderWidth: "4px",
                   borderRadius: "12px",
@@ -187,18 +172,12 @@ const ProductPage = () => {
                 <ShoppingCartOutlined /> Add to cart
               </button>
               <Link to={`/payment/${product.id}/${product.seller_id}`}>
-                <button 
-                  className="w-[20vw] h-11 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold cursor-pointer"
-                  onClick={(e) => {
-                    handleBuyNow(product.id, product.seller_id);
-                  }}
-                >
+                <button className="h-11 w-[20vw] cursor-pointer bg-cyan-500 font-semibold text-white hover:bg-cyan-600">
                   Buy Now
                 </button>
               </Link>
             </div>
           </div>
-
         </div>
       </div>
     </>

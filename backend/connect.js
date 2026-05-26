@@ -15,4 +15,4 @@ db.connect((err)=>{
     }
 });
 
-export default db
+export default db;

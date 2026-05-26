@@ -11,7 +11,7 @@ const AddToCart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
+const token = localStorage.getItem("token");
   // Fetch cart items
   const fetchCartItems = async () => {
     if (!user?.id) {
@@ -22,7 +22,9 @@ const AddToCart = () => {
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:8000/api/cart/${user.id}`, {
-        withCredentials: true,
+         headers: {
+    Authorization: `Bearer ${token}`,
+  },
       });
       const data = response.data;
       if (Array.isArray(data)) {
@@ -41,7 +43,9 @@ const AddToCart = () => {
   const handleDeleteItem = async (cartId) => {
     try {
       const response = await axios.delete(`http://localhost:8000/api/cart/${cartId}`, {
-        withCredentials: true,
+         headers: {
+    Authorization: `Bearer ${token}`,
+  },
       });
       if (response.status === 200) {
         setCartItems(cartItems.filter(item => item.cart_id !== cartId));
@@ -65,8 +69,10 @@ const AddToCart = () => {
 
     try {
       await axios.put(`http://localhost:8000/api/cart/${cartId}`, 
-        { quantity: newQuantity },
-        { withCredentials: true }
+        { quantity: newQuantity },{
+        headers: {
+    Authorization: `Bearer ${token}`,
+  },}
       );
     } catch (error) {
       console.error("Error updating quantity:", error);

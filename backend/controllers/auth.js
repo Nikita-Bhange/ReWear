@@ -14,7 +14,8 @@ export const login = async (req, res) => {
     if (!email || !password || !role) {
       return res.status(400).json({ message: "Email, password, and role are required" });
     }
-
+     
+    //if we export db.promise() in db function when we can use
     const [users] = await db.promise().query(
       "SELECT * FROM users WHERE email = ? LIMIT 1",
       [email]

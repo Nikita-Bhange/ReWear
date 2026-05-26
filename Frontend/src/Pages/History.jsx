@@ -1,11 +1,35 @@
 import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar.jsx";
 import Footer from "../Components/Footer.jsx";
 import { UserContext } from "../Context/User.jsx";
 
+const parseImages = (rawImage) => {
+  if (!rawImage) return [];
+  if (Array.isArray(rawImage)) return rawImage;
+
+  if (typeof rawImage === "string") {
+    const trimmed = rawImage.trim();
+
+    if (!trimmed) return [];
+    if (!trimmed.startsWith("[")) return [trimmed];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error("Error parsing images:", error);
+      return [];
+    }
+  }
+
+  return [];
+};
+
 const History = () => {
   const { user } = useContext(UserContext);
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("purchased");
@@ -53,12 +77,7 @@ const History = () => {
   };
 
   const OrderCard = ({ order, type }) => {
-    let images = [];
-    try {
-      images = order.image ? JSON.parse(order.image) : [];
-    } catch (error) {
-      console.error("Error parsing images:", error);
-    }
+    const images = parseImages(order.image);
 
     return (
       <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
@@ -113,11 +132,17 @@ const History = () => {
             </div>
 
             <div className="mt-4 flex gap-3">
-              <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+              <button
+                onClick={() => navigate(`/product/${order.p_id}`)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+              >
                 View Details
               </button>
               {order.status === "Delivered" && (
-                <button className="px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 transition">
+                <button
+                  onClick={() => navigate(`/product/${order.p_id}`)}
+                  className="px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 transition"
+                >
                   Download Invoice
                 </button>
               )}

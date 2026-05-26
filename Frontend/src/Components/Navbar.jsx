@@ -1,6 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
 import {
-  Search,
   ShoppingCartOutlined,
   AccountCircle,
   MenuOutlined,
@@ -14,32 +13,56 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const style = "text-xl cursor-pointer ml-[25px] mobile:ml-[5px]";
+  const token = localStorage.getItem("token");
 
   // Fetch cart count
   useEffect(() => {
+    let intervalId = null;
+    let failureCount = 0;
+
     const fetchCartCount = async () => {
-      if (!user?.id) {
+      if (!user?.id || !token) {
         setCartCount(0);
         return;
       }
+
       try {
         const response = await axios.get(`http://localhost:8000/api/cart/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           withCredentials: true,
         });
         const items = Array.isArray(response.data) ? response.data : [];
+        failureCount = 0;
         setCartCount(items.length);
       } catch (error) {
-        console.error("Error fetching cart count:", error);
+        failureCount += 1;
+        if (failureCount === 1) {
+          console.error("Error fetching cart count:", error);
+        }
+        if (failureCount >= 3 && intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+          console.warn("Stopped cart polling after repeated failures.");
+        }
         setCartCount(0);
       }
     };
 
     fetchCartCount();
-    
-    // Refresh cart count every 5 seconds
-    const interval = setInterval(fetchCartCount, 5000);
-    return () => clearInterval(interval);
-  }, [user]);
+
+    if (user?.id && token) {
+      // Refresh cart count every 5 seconds
+      intervalId = setInterval(fetchCartCount, 5000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [token, user?.id]);
 
   return (
     <>
@@ -65,7 +88,7 @@ const Navbar = () => {
               </NavLink>
             </li>
             <li className="hidden sm:flex text-xl pt-2 mr-3  text-white">
-              <NavLink className={style} to={"/home"}>
+              <NavLink className={style} to={"/aboutus"}>
                 <p>About us</p>
               </NavLink>
             </li>
@@ -110,7 +133,7 @@ const Navbar = () => {
             <NavLink className={style} to="/home#categories">
               Categories
             </NavLink>
-            <NavLink className={style} to="/home">
+            <NavLink className={style} to="/aboutus">
               About us
             </NavLink>
             <NavLink className={style} to="/cart" >

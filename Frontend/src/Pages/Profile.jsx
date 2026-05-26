@@ -5,16 +5,12 @@ import Navbar from "../Components/Navbar.jsx";
 import Footer from "../Components/Footer.jsx";
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../Context/User";
+import { AccountCircle } from "@mui/icons-material";
 
 function Profile() {
   const [err, setErr] = useState(null);
   const navigate = useNavigate();
-  const { user, logout, uploadProfilePhoto } = useContext(UserContext);
-
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState("");
-  
-  const fileInputRef = React.useRef(null);
+  const { user, logout } = useContext(UserContext);
 
   const handleClick = async () => {
     try {
@@ -23,28 +19,6 @@ function Profile() {
     } catch (err) {
       setErr(err?.message || "An error occurred");
     }
-  };
-
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
-      handleUploadPhoto(selectedFile);
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleUploadPhoto = async (selectedFile) => {
-    if (!selectedFile) {
-      alert("Please select a file first!");
-      return;
-    }
-    const res = await uploadProfilePhoto(selectedFile);
-    if (!res?.success) alert("Failed to upload profile photo");
   };
 
   return (
@@ -56,25 +30,9 @@ function Profile() {
           
           <div className="px-6 pb-6">
             <div className="relative -mt-16 flex flex-col items-center">
-              <img 
-                src={previewUrl || user?.profile_photo || "/default-avatar.png"}
-                alt="Profile" 
-                className="w-32 h-32 rounded-full border-4 border-white object-cover shadow-md"
-              />
-              <button 
-                onClick={triggerFileInput} 
-                className="mt-2 bg-white text-cyan-600 border border-cyan-500 px-4 py-1 rounded-full text-sm font-semibold hover:bg-cyan-50 transition"
-              >
-                {user?.profile_photo ? "Edit Photo" : "Upload Photo"}
-              </button>
-              
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                ref={fileInputRef}
-                className="hidden"
-              />
+              <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-white bg-slate-100 shadow-md">
+                <AccountCircle sx={{ fontSize: 108, color: "#475569" }} />
+              </div>
             </div>
 
             <div className="text-center mt-4">

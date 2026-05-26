@@ -48,23 +48,23 @@ export default function HowItWorks() {
   }, []);
 
   return (
-    <div className="bg-white py-20 px-6 text-center">
+    <div className="bg-white py-16 md:py-20 px-4 sm:px-6 text-center overflow-hidden">
       <h2 className="text-3xl font-bold mb-2">How It Works</h2>
       <p className="text-gray-500 mb-16">
         Start selling your items in just 4 simple steps
       </p>
 
-      <div className="relative flex justify-center gap-20 flex-wrap">
+<div className="relative flex flex-wrap justify-center gap-10 md:gap-16 max-w-7xl mx-auto">
 
         {/* Green Connecting Line */}
-        <div className="absolute top-8 left-50 right-50 h-[3px] bg-green-600 rounded-full hidden md:block"></div>
+       <div className="absolute top-8 left-[10%] right-[10%] h-[3px] bg-green-600 rounded-full hidden lg:block"></div>
 
         {steps.map((step, i) => (
           <div
             key={step.id}
             ref={(el) => (refs.current[i] = el)}
             data-id={step.id}
-            className={`w-64 transition-all duration-700 ease-out transform
+           className={`w-full sm:w-[260px] transition-all duration-700 ease-out transform
               ${
                 visible.includes(String(step.id))
                   ? "opacity-100 translate-y-0"
