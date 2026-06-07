@@ -27,12 +27,12 @@ const AuthLayout = ({
 
           <div className="relative rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur">
             <p className="text-sm uppercase tracking-[0.3em] text-white/70">
-              Secure auth flow
+              Why ReWear?
             </p>
             <div className="mt-4 space-y-3 text-sm text-white/85">
-              <p>React Hook Form + Zod for fast validation.</p>
-              <p>Express API with bcrypt hashing and JWT cookie sessions.</p>
-              <p>Buyer and admin access stay separated with role-aware sign-in.</p>
+              <p>Create an account and start buying or selling today.</p>
+              <p>Turn Clutter into Cash, and Deals into Discoveries.</p>
+              <p>Connecting Buyers and Sellers for a Greener Future.</p>
             </div>
           </div>
         </aside>

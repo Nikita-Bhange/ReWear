@@ -1,6 +1,14 @@
 import React  from "react";
 import { ArrowRight, TrendingUp, ShieldCheck } from "lucide-react";
-
+import {
+  Leaf,
+  Trees,
+  Recycle,
+  Earth,
+  Sprout
+} from "lucide-react";
+import { Link } from "react-scroll";
+import { NavLink } from "react-router-dom";
 export default function HomePage() {
   return (
     <section className="relative h-screen w-full overflow-hidden bg-[#F6FAF7] px-6 sm:px-[6vw] flex items-center">
@@ -50,40 +58,39 @@ export default function HomePage() {
 
         {/* Buttons */}
         <div className="mt-8 flex gap-4">
-          <button className="flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 text-white font-medium hover:bg-green-700 transition">
-            Start Shopping <ArrowRight size={18} />
-          </button>
+<Link to="categories" smooth={true} duration={500}>
+  <button className="flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 text-white font-medium hover:bg-green-700 transition">
+    Start Shopping <ArrowRight size={18} />
+  </button>
+</Link>
 
-          <button className="rounded-xl border border-green-600 px-6 py-3 text-green-700 font-medium hover:bg-green-50 transition">
-            Sell Now
-          </button>
+<NavLink to="/sellproduct" >
+  <button className="rounded-xl border border-green-600 px-6 py-3 text-green-700 font-medium hover:bg-green-50 transition">
+    Sell Now
+  </button>
+</NavLink>
         </div>
       </div>
 
       {/* Floating Right Cards */}
       <div className="absolute right-10 top-32 hidden md:block">
 
-        {/* Trending Now */}
+       
         <div className="animate-float mb-6 rounded-2xl bg-white shadow-lg px-4 py-3 flex items-center gap-3">
-          <TrendingUp className="text-green-600" />
+           <Leaf size={24} className="text-green-600" />
+           
           <div>
             <p className="text-sm font-semibold text-gray-900">
-              Trending Now
+              eco-friendly
             </p>
-            <p className="text-xs text-gray-500">2,500+ items</p>
+        
           </div>
         </div>
 
         {/* Secure Deals */}
-        <div className="rounded-2xl bg-white shadow-lg px-4 py-3 flex items-center gap-3">
-          <ShieldCheck className="text-red-500" />
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              Secure Deals
-            </p>
-            <p className="text-xs text-gray-500">100% Protected</p>
-          </div>
-        </div>
+        {/* <div className="rounded-2xl bg-white shadow-lg px-4 py-3 flex items-center gap-3">
+        
+        </div> */}
       </div>
     </section>
   );

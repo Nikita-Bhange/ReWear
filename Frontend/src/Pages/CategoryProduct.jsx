@@ -60,12 +60,15 @@ const CategoryProduct = () => {
       temp = temp.filter((item) => Number(item.price) <= price);
     }
     
-    if (search) {
-        temp = temp.filter(item => item.p_name && item.p_name.toLowerCase().includes(search.toLowerCase()));
-    }
+    // if (search) {
+    //     temp = temp.filter(item => item.p_name && item.p_name.toLowerCase().includes(search.toLowerCase()));
+    // }
+    if (search) { temp = temp.filter(item =>item.seller_city && item.seller_city.toLowerCase().includes(search.toLowerCase())
+  );
+}
     
     if (location) {
-        temp = temp.filter(item => item.location && item.location.toLowerCase().includes(location.toLowerCase()));
+        temp = temp.filter(item => item.seller_city && item.seller_city.toLowerCase().includes(location.toLowerCase()));
     }
 
     setFilteredItems(temp);
@@ -83,9 +86,6 @@ const CategoryProduct = () => {
         <div className="border-2 border-gray-200 rounded-3xl px-4 py-2 flex items-center gap-2">
           <input className="outline-0" type="text" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <Search />
-        </div>
-        <div className="border-2 border-gray-200 rounded-3xl px-4 py-2 flex items-center gap-2">
-          <input className="outline-0" type="text" placeholder="Location/State..." value={location} onChange={(e) => setLocation(e.target.value)} />
         </div>
       </div>
 

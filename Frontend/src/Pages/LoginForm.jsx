@@ -86,9 +86,9 @@ const LoginForm = () => {
     <AuthLayout
       eyebrow="Sign in"
       title="Welcome back"
-      subtitle="Use your registered email and password to open your buyer or admin workspace."
+      subtitle="Use your registered email and password to open your account."
       sideTitle="Pick up where you left off."
-      sideText="Your session stays behind an Express API, bcrypt-hashed passwords, and JWT cookie-based auth."
+     
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <button
@@ -96,7 +96,7 @@ const LoginForm = () => {
           className={roleButtonClass("user")}
           onClick={() => handleRoleChange("user")}
         >
-          Shopper login
+          User login
         </button>
         <button
           type="button"

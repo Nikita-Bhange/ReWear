@@ -57,7 +57,7 @@ function Register() {
     setServerError("");
 
     try {
-      await axios.post(
+      const res = await axios.post(
         "http://localhost:8000/api/auth/register",
         {
           username: formData.username,
@@ -68,7 +68,10 @@ function Register() {
         { withCredentials: true }
       );
 
-      navigate(formData.role === "admin" ? "/login/admin" : "/login");
+    navigate(
+  `/verify-email?email=${encodeURIComponent(formData.email)}&role=${formData.role}`
+);
+
     } catch (err) {
       console.error("Register error:", err);
       setServerError(
@@ -92,9 +95,8 @@ function Register() {
     <AuthLayout
       eyebrow="Create account"
       title="Start with a secure account"
-      subtitle="Register with validated inputs and encrypted passwords, then sign in right away."
-      sideTitle="Join the circular marketplace with confidence."
-      sideText="Create a buyer or admin account with a simple auth flow backed by bcrypt and JWT."
+   
+    
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <button
@@ -102,7 +104,7 @@ function Register() {
           className={roleButtonClass("user")}
           onClick={() => handleRoleChange("user")}
         >
-          Shopper account
+          User account
         </button>
         <button
           type="button"
