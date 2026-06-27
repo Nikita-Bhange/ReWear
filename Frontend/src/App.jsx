@@ -1,9 +1,9 @@
+
 import React from "react"
 import { Routes, Route } from "react-router-dom"
 import LoginForm from "./Pages/LoginForm"
 import Register from "./Pages/Register"
 import Home from "./Pages/Home"
-import Aboutus from "./Pages/Aboutus.jsx"
 import Profile from "./Pages/Profile.jsx"
 import CategoryProduct from "./Pages/CategoryProduct.jsx"
 import ProductPage from "./Pages/ProductPage.jsx"
@@ -12,9 +12,7 @@ import History from "./Pages/History.jsx"
 import Payment from "./Pages/Payment.jsx"
 import AddToCart from "./Pages/AddToCart.jsx"
 import AdminDashboard from "./Pages/AdminDashboard.jsx"
-import Navbar from "./Components/Navbar.jsx"
-import Footer from "./Components/Footer.jsx"
-
+import Aboutus from "./Pages/Aboutus.jsx"
 
 
 function App() {
@@ -26,7 +24,7 @@ function App() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/login/:role" element={<LoginForm />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/aboutus" element={<><Navbar /><Aboutus /><Footer /></>} />
+        <Route path="/aboutus" element={<Aboutus />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/category/:id" element={<CategoryProduct/>}/>

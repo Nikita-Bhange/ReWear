@@ -81,10 +81,13 @@ const CategoryProduct = () => {
         <h2 className="text-4xl font-bold capitalize">{categoryName || "All Products"}</h2>
       </div>
 
-      <div className="flex gap-5 px-8 mb-6 flex-wrap">
+      <div className="flex  gap-5 px-8 mb-6 flex-wrap">
         <button onClick={() => setFiltersOpen(!filtersOpen)} className="border-2 border-green-700 rounded-xl px-4 py-2 font-medium text-green-600">Filters</button>
-        <div className="border-2 border-gray-200 rounded-3xl px-4 py-2 flex items-center gap-2">
-          <input className="outline-0" type="text" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="border-2 w-[250px] border-gray-200 rounded-3xl px-4 py-2 flex items-center gap-2">
+
+           <input type="text" placeholder="Search product by location..."
+            className="border-none outline-none text-sm text-gray-800 w-full bg-transparent placeholder-gray-400"
+            value={search} onChange={(e) => setSearch(e.target.value)}/>
           <Search />
         </div>
       </div>

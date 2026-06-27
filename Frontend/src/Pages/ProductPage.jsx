@@ -99,7 +99,8 @@ const ProductPage = () => {
 
                 <p className="mt-1 text-sm text-gray-500">
                   {seller.address || seller.city || "Seller location not available"} • Posted{" "}
-                  {product.posting_date || "Recently"}
+                 
+                 { new Date(product.posting_date).toLocaleDateString("en-IN") || "Recently"}
                 </p>
 
                 <p className="mt-4 text-3xl font-bold text-blue-600">
@@ -116,7 +117,7 @@ const ProductPage = () => {
                 </div>
 
                 <div className="mt-6 grid grid-cols-3 text-center text-sm text-gray-600">
-                  <p>Get all details</p>
+                  
                   <p>Schedule a visit</p>
                   <p>Negotiate price</p>
                 </div>
@@ -129,7 +130,6 @@ const ProductPage = () => {
               <button className="border-b-2 border-blue-600 pb-2 font-medium text-blue-600">
                 Ad Details
               </button>
-              <button className="ml-6 text-gray-500">Description</button>
             </div>
 
             <h2 className="mb-4 text-lg font-semibold">Ad Details</h2>
@@ -137,6 +137,7 @@ const ProductPage = () => {
             <div className="grid grid-cols-1 gap-y-4 text-sm md:grid-cols-2">
               <div>
                 <p className="text-gray-500">Ad ID</p>
+
                 <p className="font-medium">{product.id || "N/A"}</p>
               </div>
               <div>

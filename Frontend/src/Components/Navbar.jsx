@@ -68,9 +68,10 @@ const Navbar = () => {
     <>
       <div className="sticky h-20 fixed px-6 m-0 top-0 z-50 bg-blue-950 shadow-md w-full">
         <div className="wrapper pr-2.5 flex justify-between items-center mobile:pl-0 mobile:pr-0">
-          <div className="w-[200px] m-3 pl-2">
+          <div className=" pt-3 font-bold m-3 pl-2">
             <NavLink to="/home">
-              {/* <img src={secondhand} alt="logo" className="" /> */}
+            
+              <p className="text-xl text-white">ReWear</p>
             </NavLink>
           </div>
 
@@ -93,7 +94,7 @@ const Navbar = () => {
               </NavLink>
             </li>
         
-            <li className="hidden sm:flex text-xl pt-1 pb-2 mt-2 ml-3  text-blue-950 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl w-20 h-9 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-105">
+            <li className="hidden sm:flex text-xl pt-1 pb-2 mt-2 ml-3  text-white hover:text-blue-950 bg-gradient-to-r from-green-600 to-green-500 rounded-xl w-20 h-9 transition ease-in-out delay-150  hover:scale-105">
               <NavLink className={style} to={"/sellproduct"}>
                 <p>Sell</p>
               </NavLink>
