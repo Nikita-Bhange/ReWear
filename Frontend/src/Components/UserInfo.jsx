@@ -24,7 +24,7 @@ const UserInfo = () => {
     const fetchAddress = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:8000/api/profile/address/${userId}`);
+        const res = await axios.get(`http://localhost:8000/api/profile/address/${userId}`, { withCredentials: true });
         if (res.data && res.data.address) {
           setForm(res.data.address);
         }

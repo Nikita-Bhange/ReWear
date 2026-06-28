@@ -22,9 +22,10 @@ const token = localStorage.getItem("token");
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:8000/api/cart/${user.id}`, {
-         headers: {
-    Authorization: `Bearer ${token}`,
-  },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
       });
       const data = response.data;
       if (Array.isArray(data)) {
@@ -43,9 +44,10 @@ const token = localStorage.getItem("token");
   const handleDeleteItem = async (cartId) => {
     try {
       const response = await axios.delete(`http://localhost:8000/api/cart/${cartId}`, {
-         headers: {
-    Authorization: `Bearer ${token}`,
-  },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
       });
       if (response.status === 200) {
         setCartItems(cartItems.filter(item => item.cart_id !== cartId));
@@ -69,10 +71,11 @@ const token = localStorage.getItem("token");
 
     try {
       await axios.put(`http://localhost:8000/api/cart/${cartId}`, 
-        { quantity: newQuantity },{
-        headers: {
-    Authorization: `Bearer ${token}`,
-  },}
+        { quantity: newQuantity },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
       );
     } catch (error) {
       console.error("Error updating quantity:", error);

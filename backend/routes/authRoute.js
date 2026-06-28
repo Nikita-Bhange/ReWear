@@ -3,6 +3,8 @@ import {
   register,
   login,
   logout,
+  verifyOtp,
+  sendOtp
 } from "../controllers/auth.js";
 import { protect, adminOnly } from "../middleware/authmiddleware.js";
 import { db } from "../connect.js";
@@ -31,6 +33,14 @@ router.get("/me", protect, async (req, res) => {
 
 router.get("/admin", protect, adminOnly, (req, res) => {
   res.json({ message: "Welcome Admin" });
-});
+});   
 
+// ─── VERIFY OTP ──────────────────────────────────────────────────────────────
+router.post("/verifyOtp", verifyOtp)
+ 
+
+// ─── RESEND OTP ──────────────────────────────────────────────────────────────
+router.post("/sendOtp", sendOtp)
+
+router.post("/resendOtp", sendOtp);
 export default router;

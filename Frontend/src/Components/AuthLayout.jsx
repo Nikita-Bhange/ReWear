@@ -9,9 +9,9 @@ const AuthLayout = ({
   children,
 }) => {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#dff7ff,_#f8fafc_42%,_#eff6ff_100%)] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl overflow-hidden rounded-[32px] border border-white/70 bg-white/75 shadow-[0_25px_80px_rgba(15,23,42,0.12)] backdrop-blur md:grid-cols-[1.1fr_0.9fr]">
-        <aside className="relative hidden overflow-hidden bg-[linear-gradient(160deg,_#0f766e_0%,_#0284c7_45%,_#1d4ed8_100%)] p-10 text-white md:flex md:flex-col md:justify-between lg:p-14">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#dcfce7,_#f0fdf4_42%,_#ecfdf5_100%)] px-4 py-6 sm:px-6 lg:px-8">
+  <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl overflow-hidden rounded-[32px] border border-white/70 bg-white/75 shadow-[0_25px_80px_rgba(22,101,52,0.12)] backdrop-blur md:grid-cols-[1.1fr_0.9fr]">
+    <aside className="relative hidden overflow-hidden bg-[linear-gradient(160deg,_#14532d_0%,_#15803d_45%,_#22c55e_100%)] p-10 text-white md:flex md:flex-col md:justify-between lg:p-14">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_30%),radial-gradient(circle_at_bottom_left,_rgba(255,255,255,0.18),_transparent_26%)]" />
           <div className="relative">
             <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/75">

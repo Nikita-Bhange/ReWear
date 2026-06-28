@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import * as z from "zod";
 import AuthLayout from "../Components/AuthLayout";
+import {OtpVerification} from "../Components/OtpVerification";
 
 const registerSchema = z.object({
   username: z.string().min(2, "Name must be at least 2 characters"),
@@ -23,6 +24,12 @@ const registerSchema = z.object({
 
 function Register() {
   const navigate = useNavigate();
+  // BUG FIX: declare all missing state variables
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState(""); // BUG FIX: replaces missing `formData`
+ const [isLoading, setIsLoading] = useState(false);
+
   const { role: routeRole } = useParams();
   const [serverError, setServerError] = useState("");
   const {
@@ -44,6 +51,35 @@ function Register() {
 
   const watchRole = watch("role");
 
+
+// Add this useEffect — starts countdown when modal opens
+// useEffect(() => {
+//   if (!showOtpModal) return;
+
+//   return () => clearInterval(interval);
+// }, [showOtpModal]);
+
+// Format seconds to mm:ss
+// const formatTime = (seconds) => {
+//   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+//   const s = (seconds % 60).toString().padStart(2, "0");
+//   return `${m}:${s}`;
+// };
+
+// Resend handler
+// const handleResendOtp = async () => {
+//   try {
+//     await axios.post("http://localhost:8000/api/auth/resendOtp", {
+//       email: registeredEmail,
+//     });
+//     setTimer(300);
+//     setCanResend(false);
+//     alert("New OTP sent!");
+//   } catch (err) {
+//     alert(err.response?.data || "Failed to resend OTP");
+//   }
+// };
+
   useEffect(() => {
     setValue("role", routeRole === "admin" ? "admin" : "user");
   }, [routeRole, setValue]);
@@ -53,34 +89,49 @@ function Register() {
     navigate(selectedRole === "admin" ? "/register/admin" : "/register");
   };
 
-  const onSubmit = async (formData) => {
-    setServerError("");
+// 3. onSubmit stays the same — just sets these two states
+const onSubmit = async (formData) => {
+  setServerError("");
+  try {
+    setIsLoading(true);
+    await axios.post("http://localhost:8000/api/auth/register", {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+    }, { withCredentials: true });
 
-    try {
-      const res = await axios.post(
-        "http://localhost:8000/api/auth/register",
-        {
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-        },
-        { withCredentials: true }
-      );
+    setRegisteredEmail(formData.email);
+    setShowOtpModal(true);
+  } catch (err) {
+    setServerError(
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      "Registration failed. Please try again."
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    navigate(
-  `/verify-email?email=${encodeURIComponent(formData.email)}&role=${formData.role}`
-);
 
-    } catch (err) {
-      console.error("Register error:", err);
-      setServerError(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Registration failed. Please try again."
-      );
-    }
-  };
+  //   const handleVerifyOtp = async () => {
+  //   try {
+  //     await axios.post("http://localhost:8000/api/auth/verifyOtp", { // BUG FIX: port 3000 not 8000
+  //       email: registeredEmail, // BUG FIX: use registeredEmail state, not undefined formData
+  //       otp,
+  //     });
+
+  //     setShowOtpModal(false);
+  //     alert("Email verified! Please log in.");
+  //     navigate("/login");
+  //   } catch (err) {
+  //     console.log(err);
+  //     alert(err.response?.data || "OTP verification failed");
+  //   }finally{
+  //      setIsLoading(false);
+  //   }
+  // };
 
   const inputClass =
     "mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100";
@@ -90,6 +141,8 @@ function Register() {
         ? "border-sky-500 bg-sky-50 text-sky-700 shadow-[0_8px_20px_rgba(2,132,199,0.12)]"
         : "border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700"
     }`;
+
+
 
   return (
     <AuthLayout
@@ -181,9 +234,9 @@ function Register() {
         <button
           className="w-full rounded-2xl bg-[linear-gradient(135deg,_#0f766e,_#0284c7,_#2563eb)] px-4 py-3 text-base font-semibold text-white shadow-[0_18px_34px_rgba(2,132,199,0.24)] transition hover:-translate-y-0.5"
           type="submit"
-          disabled={isSubmitting}
+          disabled={isLoading}
         >
-          {isSubmitting ? "Creating account..." : "Create account"}
+          {isLoading ? "Sending OTP..." : "Register"}
         </button>
       </form>
 
@@ -196,6 +249,14 @@ function Register() {
           Sign in
         </Link>
       </p>
+
+      {showOtpModal && (
+  
+         <OtpVerification
+    email={registeredEmail}
+    onClose={() => setShowOtpModal(false)}
+  />
+)}
     </AuthLayout>
   );
 }

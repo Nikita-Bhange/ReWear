@@ -5,6 +5,7 @@ export const UserContext = createContext()
 
 export const UserContextProvider = ({children}) =>{
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const login = async (inputs) => {
     try {
@@ -41,9 +42,12 @@ export const UserContextProvider = ({children}) =>{
         { withCredentials: true }
       );
       setUser(null);
+      localStorage.removeItem("token");
       return { success: true };
     } catch (error) {
       console.error("Logout error:", error);
+      localStorage.removeItem("token");
+      setUser(null);
       return { success: false, error };
     }
   };
@@ -64,9 +68,36 @@ export const UserContextProvider = ({children}) =>{
           console.error("Session check failed:", error);
         }
         setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
     verifyUser();
+  }, []);
+
+  // Axios global response interceptor for 401/403 errors (token expired/invalid)
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          // Avoid intercepting during login or initial session validation
+          if (
+            error.config &&
+            !error.config.url.includes("/api/auth/login") &&
+            !error.config.url.includes("/api/auth/me")
+          ) {
+            setUser(null);
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
   }, []);
 
   const uploadProfilePhoto = async (file) => {
@@ -96,7 +127,7 @@ export const UserContextProvider = ({children}) =>{
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, login, logout, uploadProfilePhoto }}>
+    <UserContext.Provider value={{ user, setUser, login, logout, uploadProfilePhoto, loading }}>
       {children}
     </UserContext.Provider>
   );

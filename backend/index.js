@@ -21,7 +21,7 @@ app.use(cookieParser())
 
 
 app.use(cors({
-    origin: "http://localhost:5174",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
 }))
@@ -35,7 +35,13 @@ console.log(process.env.SMTP_PORT);
 console.log(process.env.SMTP_USER);
 console.log(process.env.SMTP_PASS);
 
+
 app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes); //this cause problem because send-otp is not defined in authRoutes
+app.use("/api/auth", authRoutes); //These duplicate mounts are intercepting the request before it reaches your profile route.
+app.use("/api/auth/profile", authRoutes);
+
+
 app.use("/api/profile", profileRoute);
 app.use('/api/category', categoryRoutes);
 app.use('/api/cart',cartRoutes)

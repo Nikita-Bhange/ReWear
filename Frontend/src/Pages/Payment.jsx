@@ -73,27 +73,29 @@ const Payment = () => {
           setProduct(response.data.product[0]);
         }
       } catch (error) {
-        console.error("Error fetching product:", error);
+        console.error("Error fetching product details:", error);
       }
     };
 
     const fetchSellerDetails = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/api/profile/address/${sellerId}`
+          `http://localhost:8000/api/profile/address/${sellerId}`,
+          { withCredentials: true }
         );
         if (response.data.address) {
           setSeller(response.data.address);
         }
       } catch (error) {
-        console.error("Error fetching seller:", error);
+        console.error("Error fetching seller address:", error);
       }
     };
 
     const fetchUserAddress = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/api/profile/address/${user?.id}`
+          `http://localhost:8000/api/profile/address/${user?.id}`,
+          { withCredentials: true }
         );
         if (response.data.address) {
           setAddress(response.data.address);

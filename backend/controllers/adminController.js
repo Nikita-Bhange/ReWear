@@ -38,13 +38,13 @@ export const getDashboardStats = async (req, res) => {
     if (userInfo.role !== "admin") return res.status(403).json({ error: "Access denied" });
 
     // Get stats
-    const [users] = await db.query("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
-    const [products] = await db.query("SELECT COUNT(*) as count FROM product");
-    const [soldProducts] = await db.query("SELECT COUNT(*) as count FROM product WHERE status = 'sold'");
-    const [pendingOrders] = await db.query("SELECT COUNT(*) as count FROM order_detail WHERE status = 'Pending'");
-    const [revenue] = await db.query("SELECT SUM(amount) as total FROM order_detail WHERE status = 'Delivered'");
-    const [activeSellers] = await db.query("SELECT COUNT(DISTINCT seller_id) as count FROM product");
-    const [reports] = await db.query("SELECT COUNT(*) as count FROM user_reports WHERE status = 'pending'");
+    const [users] = await db.promise().query("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
+    const [products] = await db.promise().query("SELECT COUNT(*) as count FROM product");
+    const [soldProducts] = await db.promise().query("SELECT COUNT(*) as count FROM product WHERE status = 'sold'");
+    const [pendingOrders] = await db.promise().query("SELECT COUNT(*) as count FROM order_detail WHERE status = 'Pending'");
+    const [revenue] = await db.promise().query("SELECT SUM(amount) as total FROM order_detail WHERE status = 'Delivered'");
+    const [activeSellers] = await db.promise().query("SELECT COUNT(DISTINCT seller_id) as count FROM product");
+    const [reports] = await db.promise().query("SELECT COUNT(*) as count FROM user_reports WHERE status = 'pending'");
 
     res.json({
       totalUsers: users[0].count,
@@ -69,7 +69,7 @@ export const getAllUsers = async (req, res) => {
     const userInfo = jwt.verify(token, process.env.JWT_SECRET);
     if (userInfo.role !== "admin") return res.status(403).json({ error: "Access denied" });
 
-    const [users] = await db.query(
+    const [users] = await db.promise().query(
       "SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC"
     );
     res.json({ users });
@@ -87,7 +87,7 @@ export const getAllProducts = async (req, res) => {
     const userInfo = jwt.verify(token, process.env.JWT_SECRET);
     if (userInfo.role !== "admin") return res.status(403).json({ error: "Access denied" });
 
-    const [products] = await db.query(
+    const [products] = await db.promise().query(
       `SELECT p.*, u.username as seller_name 
        FROM product p 
        JOIN users u ON p.seller_id = u.id 
@@ -108,7 +108,7 @@ export const getAllOrders = async (req, res) => {
     const userInfo = jwt.verify(token, process.env.JWT_SECRET);
     if (userInfo.role !== "admin") return res.status(403).json({ error: "Access denied" });
 
-    const [orders] = await db.query(
+    const [orders] = await db.promise().query(
       `SELECT o.*, p.p_name, seller.username as seller_name, buyer.username as buyer_name
        FROM order_detail o
        JOIN product p ON o.p_id = p.id
@@ -155,8 +155,8 @@ export const deleteProduct = async (req, res) => {
 
     const { productId } = req.params;
 
-    await db.query("DELETE FROM order_detail WHERE p_id = ?", [productId]);
-    await db.query("DELETE FROM product WHERE id = ?", [productId]);
+    await db.promise().query("DELETE FROM order_detail WHERE p_id = ?", [productId]);
+    await db.promise().query("DELETE FROM product WHERE id = ?", [productId]);
 
     res.json({ message: "Product deleted successfully" });
   } catch (error) {
@@ -173,7 +173,7 @@ export const getReports = async (req, res) => {
     const userInfo = jwt.verify(token, process.env.JWT_SECRET);
     if (userInfo.role !== "admin") return res.status(403).json({ error: "Access denied" });
 
-    const [reports] = await db.query(
+    const [reports] = await db.promise().query(
       `SELECT r.*, 
               reporter.username as reporter_name, 
               reported.username as reported_name
@@ -200,7 +200,7 @@ export const updateReportStatus = async (req, res) => {
     const { reportId } = req.params;
     const { status, adminNotes } = req.body;
 
-    await db.query(
+    await db.promise().query(
       "UPDATE user_reports SET status = ?, admin_notes = ? WHERE id = ?",
       [status, adminNotes, reportId]
     );
@@ -220,7 +220,7 @@ export const getPaymentTransactions = async (req, res) => {
     const userInfo = jwt.verify(token, process.env.JWT_SECRET);
     if (userInfo.role !== "admin") return res.status(403).json({ error: "Access denied" });
 
-    const [transactions] = await db.query(
+    const [transactions] = await db.promise().query(
       `SELECT pt.*, u.username, o.p_id
        FROM payment_transactions pt
        JOIN users u ON pt.user_id = u.id
@@ -242,7 +242,7 @@ export const getSellerPayouts = async (req, res) => {
     const userInfo = jwt.verify(token, process.env.JWT_SECRET);
     if (userInfo.role !== "admin") return res.status(403).json({ error: "Access denied" });
 
-    const [payouts] = await db.query(
+    const [payouts] = await db.promise().query(
       `SELECT sp.*, u.username as seller_name
        FROM seller_payouts sp
        JOIN users u ON sp.seller_id = u.id

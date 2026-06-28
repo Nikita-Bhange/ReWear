@@ -13,6 +13,7 @@ import Payment from "./Pages/Payment.jsx"
 import AddToCart from "./Pages/AddToCart.jsx"
 import AdminDashboard from "./Pages/AdminDashboard.jsx"
 import Aboutus from "./Pages/Aboutus.jsx"
+import ProtectedRoute from "./Components/ProtectedRoute.jsx"
 
 
 function App() {
@@ -23,17 +24,65 @@ function App() {
         <Route path="/register/:role" element={<Register />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/login/:role" element={<LoginForm />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/aboutus" element={<Aboutus />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/category/:id" element={<CategoryProduct/>}/>
-        <Route path="/product/:id" element={<ProductPage/>}/>
-        <Route path="/product" element={<ProductPage/>}/>
-        <Route path="/sellproduct" element={<SellProduct/>}/>
-        <Route path="/history" element={<History/>}/>
-        <Route path="/payment/:productId/:sellerId" element={<Payment/>}/>
-        <Route path="/cart" element={<AddToCart/>}/>
+        <Route path="/home" element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        } />
+        <Route path="/aboutus" element={
+          <ProtectedRoute>
+            <Aboutus />
+          </ProtectedRoute>
+        } />
+        
+        {/* Protected Admin Routes */}
+        <Route path="/admin/dashboard" element={
+          <ProtectedRoute adminOnly>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        
+        {/* Protected User Routes */}
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/category/:id" element={
+          <ProtectedRoute>
+            <CategoryProduct />
+          </ProtectedRoute>
+        }/>
+        <Route path="/product/:id" element={
+          <ProtectedRoute>
+            <ProductPage />
+          </ProtectedRoute>
+        }/>
+        <Route path="/product" element={
+          <ProtectedRoute>
+            <ProductPage />
+          </ProtectedRoute>
+        }/>
+        <Route path="/sellproduct" element={
+          <ProtectedRoute>
+            <SellProduct/>
+          </ProtectedRoute>
+        }/>
+        <Route path="/history" element={
+          <ProtectedRoute>
+            <History/>
+          </ProtectedRoute>
+        }/>
+        <Route path="/payment/:productId/:sellerId" element={
+          <ProtectedRoute>
+            <Payment/>
+          </ProtectedRoute>
+        }/>
+        <Route path="/cart" element={
+          <ProtectedRoute>
+            <AddToCart/>
+          </ProtectedRoute>
+        }/>
       </Routes>
   )
 }

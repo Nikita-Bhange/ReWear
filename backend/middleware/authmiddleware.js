@@ -11,6 +11,12 @@ export const protect = (req, res, next) => {
     req.user = decoded;
     next();
   } catch {
+    res.clearCookie("token", {
+      path: "/",
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
     res.status(401).json({ message: "Invalid token" });
   }
 };

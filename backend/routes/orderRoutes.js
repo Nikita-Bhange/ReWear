@@ -1,7 +1,10 @@
 import express from "express";
 import { addOrderDetails, getUserOrders, updateOrderStatus } from "../controllers/order_detail.js";
 import { createInvoice, getInvoice, getUserInvoices } from "../controllers/invoiceController.js";
+import { protect } from "../middleware/authmiddleware.js";
 const router = express.Router();
+
+router.use(protect);
 
 // Invoice routes
 router.post("/invoice", createInvoice);

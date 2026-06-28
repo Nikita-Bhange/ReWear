@@ -1,9 +1,10 @@
 // ── ALL imports must come first in ES modules ──────────────────────────────
 import express from "express";
 import Razorpay from "razorpay";
-import crypto from "crypto";
+import crypto, { verify } from "crypto";
 import db from "../connect.js";
 import jwt from "jsonwebtoken";
+import { protect } from "../middleware/authmiddleware.js";
 import dotenv from "dotenv";
 dotenv.config();
 // ── Router & Razorpay instance ─────────────────────────────────────────────
@@ -17,33 +18,15 @@ const razorpay = new Razorpay({
 
 // ── POST /api/payment/create-order ─────────────────────────────────────────
 // Creates a Razorpay order and inserts a pending payment row in DB
-router.post("/create-order", async (req, res) => {
-  // ── Auth ────────────────────────────────────────────────────────────────────
-  const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
-  if (!token) return res.status(401).json({ error: "Not logged in!" });
-  
-  console.log("Token received:", token);               // see if token exists
-  console.log("JWT_SECRET:", process.env.JWT_SECRET); 
-  let userInfo;
- try {
-   userInfo = jwt.verify(token, process.env.JWT_SECRET);
-  console.log("Decoded user:", userInfo);
-} catch (err) {
-  console.log("JWT verify failed:", err.message); 
-  return res.status(401).json({ error: err.message });
-}
-
+router.post("/create-order", protect, async (req, res) => {
+  const userInfo = req.user;
   const { amount, order_id, payment_method } = req.body;
-
-  if (!order_id || !amount || !payment_method) {
-    return res.status(400).json({ message: "order_id, amount and payment_method are required" });
-  }
 
   // ── COD: just save record, no Razorpay order needed ─────────────────────────
   if (payment_method === "cod") {
     try {
       await db.promise().query(
-        `INSERT INTO payment_transactions (order_id, user_id, amount, payment_method, status, created_at, updated_at)
+        `INSERT INTO payment (order_id, user_id, amount, payment_method, status, created_at, updated_at)
          VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`,
         [order_id, userInfo.id, amount, payment_method]
       );
@@ -56,10 +39,6 @@ router.post("/create-order", async (req, res) => {
 
   // ── Online Payment: create Razorpay order ───────────────────────────────────
   try {
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      return res.status(500).json({ message: "Razorpay keys are missing in backend .env" });
-    }
-
     const amountInPaise = Math.round(parseFloat(amount) * 100); // 200.00 → 20000
 
     if (!amountInPaise || amountInPaise <= 0) {
@@ -75,7 +54,7 @@ router.post("/create-order", async (req, res) => {
     const razorpayOrder = await razorpay.orders.create(options);
 
     await db.promise().query(
-      `INSERT INTO payment_transactions (order_id, user_id, amount, payment_method, status, created_at, updated_at)
+      `INSERT INTO payment (order_id, user_id, amount, payment_method, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`,
       [order_id, userInfo.id, amount, payment_method]  // store original decimal in DB
     );
@@ -88,14 +67,14 @@ router.post("/create-order", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Create order error:", error);
-    res.status(500).json({ message: error.message || "Failed to create Razorpay order" });
+    console.error("Create order error:", error.message);
+    res.status(500).json({ message: error.message });
   }
 });
 
 // ── POST /api/payment/verify ───────────────────────────────────────────────
 // Verifies Razorpay signature and updates payment status in DB
-router.post("/verify", async (req, res) => {
+router.post("/verify", protect, async (req, res) => {
   const {
     razorpay_order_id,
     razorpay_payment_id,
@@ -108,7 +87,7 @@ router.post("/verify", async (req, res) => {
   // Handle explicit failure from frontend (card declined etc.)
   if (failed) {
     await db.promise().query(
-      `UPDATE payment_transactions SET status='failed', updated_at=NOW() WHERE order_id=?`,
+      `UPDATE payment SET status='failed', updated_at=NOW() WHERE order_id=?`,
       [order_id]
     );
     return res.json({ success: false });
@@ -124,7 +103,7 @@ router.post("/verify", async (req, res) => {
 
     if (expectedSignature !== razorpay_signature) {
       await db.promise().query(
-        `UPDATE payment_transactions SET status='failed', updated_at=NOW() WHERE order_id=?`,
+        `UPDATE payment SET status='failed', updated_at=NOW() WHERE order_id=?`,
         [order_id]
       );
       return res.status(400).json({ message: "Payment verification failed" });
@@ -134,7 +113,7 @@ router.post("/verify", async (req, res) => {
     const paymentDetails = await razorpay.payments.fetch(razorpay_payment_id);
 
     await db.promise().query(
-      `UPDATE payment_transactions
+      `UPDATE payment
        SET status='success',
            transaction_id=?,
            payment_method=?,
@@ -175,7 +154,7 @@ router.post(
 
       if (event.event === "payment.failed") {
         await db.promise().query(
-          `UPDATE payment_transactions SET status='failed', updated_at=NOW() WHERE transaction_id=?`,
+          `UPDATE payment SET status='failed', updated_at=NOW() WHERE transaction_id=?`,
           [event.payload.payment.entity.id]
         );
       }

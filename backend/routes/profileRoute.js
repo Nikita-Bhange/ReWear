@@ -6,10 +6,10 @@ import { protect } from "../middleware/authmiddleware.js";
 const router = express.Router();
 
 // fetch address by userid
-router.get("/address/:userid", getAddress);
+router.get("/address/:userid", protect, getAddress);
 
 // create or update address (expects body.userid)
-router.put("/address", upsertAddress);
+router.put("/address", protect, upsertAddress);
 
 // configure multer storage
 const storage = multer.diskStorage({

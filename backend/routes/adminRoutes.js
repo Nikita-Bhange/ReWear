@@ -11,8 +11,12 @@ import {
   getPaymentTransactions,
   getSellerPayouts,
 } from "../controllers/adminController.js";
+import { protect, adminOnly } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
+
+// Protect all admin routes
+router.use(protect, adminOnly);
 
 // Dashboard stats
 router.get("/stats", getDashboardStats);
