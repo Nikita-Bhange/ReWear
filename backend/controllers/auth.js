@@ -3,6 +3,8 @@ import { db } from "../connect.js";
 import { generateToken } from "../utils/generateToken.js";
 import {sendMail} from "../sendMail.js"
 
+
+
 const normalizeEmail = (email = "") => email.trim().toLowerCase();
 const normalizeName = (value = "") => value.trim();
 
@@ -115,36 +117,36 @@ export const verifyOtp = (req, res) => {
 }
 
 // ─── RESEND OTP ──────────────────────────────────────────────────────────────
-export const sendOtp =  async (req, res) => {
+// auth.js - sendOtp / resendOtp controller
+export const sendOtp = async (req, res) => {
   const { email } = req.body;
-
   if (!email) return res.status(400).json("Email is required");
 
-  const query = "SELECT * FROM users WHERE email=?";
+  try {
+    const [data] = await db.promise().query(
+      "SELECT * FROM users WHERE email = ?", [email]
+    );
 
-  db.query(query, [email], async (err, data) => {
-    if (err) return res.status(500).json("Database error");
-    if (data.length === 0) return res.status(404).json("User not found");
+    if (!data.length) return res.status(404).json("User not found");
     if (data[0].is_verified) return res.status(400).json("User already verified");
 
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    const updateQuery =
-      "UPDATE users SET otp=?, otp_expires_at=? WHERE email=?";
+    await db.promise().query(
+      "UPDATE users SET otp=?, otp_expires_at=? WHERE email=?",
+      [generatedOtp, otpExpiresAt, email]
+    );
 
-    db.query(updateQuery, [generatedOtp, otpExpiresAt, email], async (err) => {
-      if (err) return res.status(500).json("Failed to update OTP");
+    await sendMail(email, "OTP Verification", `Your new OTP is: ${generatedOtp}`);
+    return res.status(200).json({ message: "OTP resent", email });
 
-      try {
-        await sendMail(email, "OTP Verification", `Your OTP is: ${generatedOtp}`);
-        return res.status(200).json({ message: "OTP resent", email });
-      } catch {
-        return res.status(500).json("Failed to send OTP email");
-      }
-    });
-  });
-}
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
 export const register = async (req, res) => {
   try {
     const username = normalizeName(req.body?.username);
@@ -220,4 +222,112 @@ export const logout = (req, res) => {
     secure: false,
     sameSite: "lax",
   }).json({ message: "Logged out" });
+};
+
+
+export const forgotPassword = async (req, res) => {
+
+    try {
+
+        const { email } = req.body;
+
+        if (!email)  return res.status(400).json({ message: "Email is required"  });
+
+        const [user] = await db.promise().query( "SELECT * FROM users WHERE email=?", [email]);
+
+        if (user.length === 0) {  return res.status(404).json({ message: "Email not registered"})    }
+
+        const otp = Math.floor(    100000 + Math.random() * 900000  ).toString();
+
+        const expiry = new Date(  Date.now() + 10 * 60 * 1000 );
+
+        await db.promise().query( `UPDATE users    SET otp=?,   otp_expires_at=?  WHERE email=?`, [otp, expiry, email]);
+
+        await sendMail( email,  "Reset Your ReWear Password",  otp,  "forgot" );
+
+        return res.status(200).json({
+            message: "OTP sent successfully."
+        });
+
+    }
+ catch (err) {
+    console.log(err);
+
+        return res.status(500).json({  message: "Internal Server Error",  });
+    }
+
+}
+
+export const verifyForgotOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json("Email and OTP are required");
+    }
+
+    const [data] = await db.promise().query(
+      "SELECT * FROM users WHERE email=?",
+      [email]
+    );
+
+    if (data.length === 0) {
+      return res.status(404).json("User not found");
+    }
+
+    const user = data[0];
+
+    if (user.otp !== otp) {
+      return res.status(400).json("Invalid OTP");
+    }
+
+    if (new Date() > new Date(user.otp_expires_at)) {
+      return res.status(400).json("OTP has expired");
+    }
+
+    return res.status(200).json({
+      message: "OTP verified successfully",
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
+
+
+export const resetPassword = async (req, res) => {
+
+  try {
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json("All fields are required");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db.promise().query(
+      `UPDATE users
+       SET password=?,
+           otp=NULL,
+           otp_expires_at=NULL
+       WHERE email=?`,
+      [hashedPassword, email]
+    );
+
+    return res.status(200).json({
+      message: "Password updated successfully",
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    return res.status(500).json("Internal Server Error");
+
+  }
+
 };

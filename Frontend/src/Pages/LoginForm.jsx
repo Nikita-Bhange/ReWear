@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { UserContext } from "../Context/User";
 import AuthLayout from "../Components/AuthLayout";
+import ForgotPassword from "../Components/ForgotPassword";
+import { OtpVerification } from "../Components/OtpVerification"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -19,22 +21,18 @@ const LoginForm = () => {
   const [serverError, setServerError] = useState("");
   const [suggestedRole, setSuggestedRole] = useState("");
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      role: routeRole === "admin" ? "admin" : "user",
-    },
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, } = useForm({
+    resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", role: routeRole === "admin" ? "admin" : "user", },
   });
 
   const watchRole = watch("role");
+
+  //forgotpassword
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+
+
 
   useEffect(() => {
     setValue("role", routeRole === "admin" ? "admin" : "user");
@@ -52,7 +50,7 @@ const LoginForm = () => {
     try {
       const result = await login(formData);
       localStorage.setItem("token", result.token);
-        console.log("Login result:", result);
+      console.log("Login result:", result);
       if (result.success) {
         navigate(result.user?.role === "admin" ? "/admin/dashboard" : "/home");
         return;
@@ -76,10 +74,9 @@ const LoginForm = () => {
   const inputClass =
     "mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100";
   const roleButtonClass = (selectedRole) =>
-    `rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-      watchRole === selectedRole
-        ? "border-sky-500 bg-sky-50 text-sky-700 shadow-[0_8px_20px_rgba(2,132,199,0.12)]"
-        : "border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700"
+    `rounded-2xl border px-4 py-3 text-sm font-semibold transition ${watchRole === selectedRole
+      ? "border-sky-500 bg-sky-50 text-sky-700 shadow-[0_8px_20px_rgba(2,132,199,0.12)]"
+      : "border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700"
     }`;
 
   return (
@@ -88,7 +85,7 @@ const LoginForm = () => {
       title="Welcome back"
       subtitle="Use your registered email and password to open your account."
       sideTitle="Pick up where you left off."
-     
+
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <button
@@ -160,6 +157,15 @@ const LoginForm = () => {
         >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
+
+        <button
+          type="button"
+          onClick={() => setShowForgotPassword(true)}
+          className="font-semibold text-sky-700 hover:text-green-800"
+        >
+          Forgot Password?
+        </button>
+
       </form>
 
       <p className="mt-5 text-center text-sm text-slate-600">
@@ -171,6 +177,27 @@ const LoginForm = () => {
           Create one
         </Link>
       </p>
+      {
+showForgotPassword && (
+    <ForgotPassword
+        onClose={() => setShowForgotPassword(false)}
+        onOtpSent={(email)=>{
+            setForgotEmail(email);
+            setShowForgotPassword(false);
+            setShowOtpVerification(true);
+        }}
+    />
+)
+}
+{
+showOtpVerification && (
+    <OtpVerification
+        email={forgotEmail}
+        type="forgot"
+        onClose={() => setShowOtpVerification(false)}
+    />
+)
+}
     </AuthLayout>
   );
 };

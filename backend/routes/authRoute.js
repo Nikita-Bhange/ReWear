@@ -4,11 +4,13 @@ import {
   login,
   logout,
   verifyOtp,
-  sendOtp
+  sendOtp,
+  forgotPassword,
+  verifyForgotOtp,
+  resetPassword,
 } from "../controllers/auth.js";
 import { protect, adminOnly } from "../middleware/authmiddleware.js";
 import { db } from "../connect.js";
-
 const router = express.Router();
 
 router.post("/register", register);
@@ -43,4 +45,13 @@ router.post("/verifyOtp", verifyOtp)
 router.post("/sendOtp", sendOtp)
 
 router.post("/resendOtp", sendOtp);
+
+
+
+router.post("/forgotPassword", forgotPassword);
+
+router.post("/verifyForgotOtp", verifyForgotOtp);
+
+router.post("/resetPassword", resetPassword);
+
 export default router;

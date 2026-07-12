@@ -4,12 +4,22 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import React from "react";
 
-export const OtpVerification = ({ email, onClose }) =>{
+export const OtpVerification = ({ email, type, onClose }) =>{
   const navigate = useNavigate();
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(180);
   const [canResend, setCanResend] = useState(false);
   const [error, setError] = useState("");
+
+
+  /*forgot password flow*/
+  const [otpVerified, setOtpVerified] = useState(false);
+
+const [newPassword, setNewPassword] = useState("");
+
+const [confirmPassword, setConfirmPassword] = useState("");
+
+
 
   useEffect(() => {
     setTimer(180);
@@ -40,14 +50,27 @@ export const OtpVerification = ({ email, onClose }) =>{
   };
 
   const handleVerify = async () => {
+
+  
     const otp = otpDigits.join("");
     if (otp.length < 6) { setError("Please enter all 6 digits"); return; }
     setError("");
     try {
-      await axios.post("http://localhost:8000/api/auth/verifyOtp", { email, otp });
-      onClose();
-      alert("Email verified! Please log in.");
-      navigate("/login");
+       const api = type === "forgot" ? "http://localhost:8000/api/auth/verifyForgotOtp": "http://localhost:8000/api/auth/verifyOtp";
+      await axios.post(api, { email, otp });
+      
+       if (type === "register") {
+
+        onClose();
+        alert("Email verified! Please log in.");
+        navigate("/login");
+
+    } else {
+
+        setOtpVerified(true);
+
+    }
+    
     } catch (err) {
       setError(err.response?.data || "OTP verification failed");
     }
@@ -66,10 +89,45 @@ export const OtpVerification = ({ email, onClose }) =>{
     }
   };
 
+
+
+  const handleResetPassword = async () => {
+
+    if (newPassword !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+    }
+
+    try {
+
+        await axios.post(
+        "http://localhost:8000/api/auth/resetPassword",
+        {
+            email,
+            password: newPassword,
+        });
+
+        alert("Password updated successfully");
+
+        onClose();
+
+        navigate("/login");
+
+    } catch (err) {
+
+        setError(err.response?.data || "Failed to reset password");
+
+    }
+
+};
+
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-2xl w-[90%] max-w-md shadow-lg">
-        
+        {
+        !otpVerified ? (
+        <>
         {/* Icon */}
         <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,8 +197,59 @@ export const OtpVerification = ({ email, onClose }) =>{
         >
           Cancel
         </button>
-      </div>
-    </div>
-  );
-}
+        </>
+          ) : (
 
+        <>
+          {/* ================= RESET PASSWORD SCREEN ================= */}
+
+          <h2 className="text-xl font-medium text-center mb-5">
+            Reset Password
+          </h2>
+
+          <input
+            type="password"
+            placeholder="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="w-full px-4 py-3 mb-4 border rounded-xl"
+          />
+
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full px-4 py-3 mb-4 border rounded-xl"
+          />
+
+          {error && (
+            <p className="text-red-500 text-center mb-4">
+              {error}
+            </p>
+          )}
+
+          <button
+            onClick={handleResetPassword}
+            className="w-full py-3 rounded-xl bg-green-600 text-white"
+          >
+            Reset Password
+          </button>
+
+          <button
+            onClick={onClose}
+            className="w-full mt-3 text-slate-500"
+          >
+            Cancel
+          </button>
+
+        </>
+
+      )
+      }
+
+    </div>
+  </div>
+);
+
+}

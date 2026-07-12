@@ -24,7 +24,6 @@ const registerSchema = z.object({
 
 function Register() {
   const navigate = useNavigate();
-  // BUG FIX: declare all missing state variables
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState("");
   const [registeredEmail, setRegisteredEmail] = useState(""); // BUG FIX: replaces missing `formData`
@@ -32,53 +31,11 @@ function Register() {
 
   const { role: routeRole } = useParams();
   const [serverError, setServerError] = useState("");
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      role: routeRole === "admin" ? "admin" : "user",
-    }
-  });
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, }
+     = useForm({ resolver: zodResolver(registerSchema), defaultValues: {username: "",  email: "", password: "", confirmPassword: "", role: routeRole === "admin" ? "admin" : "user",   }});
 
   const watchRole = watch("role");
 
-
-// Add this useEffect — starts countdown when modal opens
-// useEffect(() => {
-//   if (!showOtpModal) return;
-
-//   return () => clearInterval(interval);
-// }, [showOtpModal]);
-
-// Format seconds to mm:ss
-// const formatTime = (seconds) => {
-//   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-//   const s = (seconds % 60).toString().padStart(2, "0");
-//   return `${m}:${s}`;
-// };
-
-// Resend handler
-// const handleResendOtp = async () => {
-//   try {
-//     await axios.post("http://localhost:8000/api/auth/resendOtp", {
-//       email: registeredEmail,
-//     });
-//     setTimer(300);
-//     setCanResend(false);
-//     alert("New OTP sent!");
-//   } catch (err) {
-//     alert(err.response?.data || "Failed to resend OTP");
-//   }
-// };
 
   useEffect(() => {
     setValue("role", routeRole === "admin" ? "admin" : "user");
@@ -115,24 +72,6 @@ const onSubmit = async (formData) => {
 };
 
 
-  //   const handleVerifyOtp = async () => {
-  //   try {
-  //     await axios.post("http://localhost:8000/api/auth/verifyOtp", { // BUG FIX: port 3000 not 8000
-  //       email: registeredEmail, // BUG FIX: use registeredEmail state, not undefined formData
-  //       otp,
-  //     });
-
-  //     setShowOtpModal(false);
-  //     alert("Email verified! Please log in.");
-  //     navigate("/login");
-  //   } catch (err) {
-  //     console.log(err);
-  //     alert(err.response?.data || "OTP verification failed");
-  //   }finally{
-  //      setIsLoading(false);
-  //   }
-  // };
-
   const inputClass =
     "mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100";
   const roleButtonClass = (selectedRole) =>
@@ -141,8 +80,6 @@ const onSubmit = async (formData) => {
         ? "border-sky-500 bg-sky-50 text-sky-700 shadow-[0_8px_20px_rgba(2,132,199,0.12)]"
         : "border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700"
     }`;
-
-
 
   return (
     <AuthLayout
@@ -254,9 +191,11 @@ const onSubmit = async (formData) => {
   
          <OtpVerification
     email={registeredEmail}
+    type="register"
     onClose={() => setShowOtpModal(false)}
   />
 )}
+
     </AuthLayout>
   );
 }
