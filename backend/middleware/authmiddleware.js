@@ -1,25 +1,25 @@
 import jwt from "jsonwebtoken";
 
-export const protect = (req, res, next) => {
-  const token = req.cookies.token;
+// export const protect = (req, res, next) => {
+//   const token = req.cookies.token;
 
-  if (!token)
-    return res.status(401).json({ message: "Not authenticated" });
+//   if (!token)
+//     return res.status(401).json({ message: "Not authenticated" });
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch {
-    res.clearCookie("token", {
-      path: "/",
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
-    res.status(401).json({ message: "Invalid token" });
-  }
-};
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     req.user = decoded;
+//     next();
+//   } catch {
+//     res.clearCookie("token", {
+//       path: "/",
+//       httpOnly: true,
+//       secure: false,
+//       sameSite: "lax",
+//     });
+//     res.status(401).json({ message: "Invalid token" });
+//   }
+// };
 
 export const adminOnly = (req, res, next) => {
   if (req.user.role !== "admin")
@@ -64,3 +64,36 @@ export const adminOnly = (req, res, next) => {
 //   }
 // };
 
+export const protect = (req, res, next) => {
+  const token = req.cookies.token;
+
+  if (!token)
+    return res.status(401).json({
+      message: "Not authenticated",
+    });
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    console.log("JWT DECODED:", decoded);
+
+    req.user = decoded;
+
+    next();
+
+  } catch {
+    res.clearCookie("token", {
+      path: "/",
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
+
+    res.status(401).json({
+      message: "Invalid token",
+    });
+  }
+};

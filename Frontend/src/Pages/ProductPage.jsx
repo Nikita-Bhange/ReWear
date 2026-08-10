@@ -4,7 +4,7 @@ import axios from "axios";
 import { ShoppingCartOutlined } from "@mui/icons-material";
 import ImageSlider from "../Components/ImageSlider";
 import Navbar from "../Components/Navbar.jsx";
-
+import ChatBox from "../Components/ChatBox.jsx";
 const parseImages = (rawImage) => {
   if (!rawImage) return [];
   if (Array.isArray(rawImage)) return rawImage;
@@ -28,13 +28,22 @@ const parseImages = (rawImage) => {
 };
 
 const ProductPage = () => {
+
+
+  const sellerId = 21;
+  const currentUserId = 22;
+  const productName = "Product";
+
   const [product, setProduct] = useState({});
+const [chatId, setChatId] = useState(null);
+  const [showChat, setShowChat] = useState(false);
   const { id } = useParams();
   const location = useLocation();
   const productId = id || location.state?.productId;
   const [seller, setSeller] = useState({});
   const [showPopup, setShowPopup] = useState(false);
-
+// const user = JSON.parse(localStorage.getItem("user"));
+// const currentUserId = user ? user.id : null;
   useEffect(() => {
     const getProduct = async () => {
       if (!productId) return;
@@ -65,6 +74,38 @@ const ProductPage = () => {
     (img) => typeof img === "string" && img.trim() !== ""
   );
 
+ const handleOpenChat = async () => {
+  try {
+      const sellerId = product?.seller_id;
+    const productId = product?.id;
+    const buyerId = 22;
+    const response = await axios.post(
+      
+      "http://localhost:8000/api/chat/create",
+      {
+        
+       buyerId,
+       sellerId,
+       productId
+      },
+      
+      {
+        withCredentials: true,
+      }
+    );
+
+    console.log("Chat created/found:", response.data);
+
+    setChatId(response.data.chatId);
+    setShowChat(true);
+
+  } catch (error) {
+    console.error(
+      "Error creating chat:",
+      error.response?.data || error.message
+    );
+  }
+};
   return (
     <>
       <Navbar />
@@ -99,8 +140,8 @@ const ProductPage = () => {
 
                 <p className="mt-1 text-sm text-gray-500">
                   {seller.address || seller.city || "Seller location not available"} • Posted{" "}
-                 
-                 { new Date(product.posting_date).toLocaleDateString("en-IN") || "Recently"}
+
+                  {new Date(product.posting_date).toLocaleDateString("en-IN") || "Recently"}
                 </p>
 
                 <p className="mt-4 text-3xl font-bold text-blue-600">
@@ -111,13 +152,16 @@ const ProductPage = () => {
                   <button className="flex-1 rounded bg-teal-500 py-2 font-semibold text-white">
                     CALL
                   </button>
-                  <button className="flex-1 rounded border border-blue-600 py-2 font-semibold text-blue-600">
+                  <button
+                    onClick={handleOpenChat}
+                    className="flex-1 rounded bg-teal-500 py-2 font-semibold text-white">
+                  
                     CHAT
                   </button>
                 </div>
 
                 <div className="mt-6 grid grid-cols-3 text-center text-sm text-gray-600">
-                  
+
                   <p>Schedule a visit</p>
                   <p>Negotiate price</p>
                 </div>
@@ -181,6 +225,17 @@ const ProductPage = () => {
           </div>
         </div>
       </div>
+
+      {showChat && (
+  <ChatBox
+    onClose={() => setShowChat(false)}
+    sellerId={sellerId}
+    productId={productId}
+    productName={productName}
+    chatId={chatId}
+    currentUserId={currentUserId}
+  />
+)}
     </>
   );
 };

@@ -26,9 +26,11 @@ router.post("/create-order", protect, async (req, res) => {
   if (payment_method === "cod") {
     try {
       await db.promise().query(
-        `INSERT INTO payment (order_id, user_id, amount, payment_method, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`,
-        [order_id, userInfo.id, amount, payment_method]
+      
+        `INSERT INTO payment_transactions
+           (order_id, user_id, amount, payment_method, transaction_id, status, gateway_response, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'pending', ?, NOW(), NOW())`,
+        [order_id, userInfo.id, amount, payment_method, null, null]
       );
       return res.json({ message: "COD order saved" });
     } catch (err) {
@@ -54,9 +56,17 @@ router.post("/create-order", protect, async (req, res) => {
     const razorpayOrder = await razorpay.orders.create(options);
 
     await db.promise().query(
-      `INSERT INTO payment (order_id, user_id, amount, payment_method, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`,
-      [order_id, userInfo.id, amount, payment_method]  // store original decimal in DB
+      `INSERT INTO payment_transactions
+         (order_id, user_id, amount, payment_method, transaction_id, status, gateway_response, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 'pending', ?, NOW(), NOW())`,
+      [
+        order_id,
+        userInfo.id,
+        amount,
+        payment_method,
+        razorpayOrder.id,                 // store Razorpay's order id as transaction_id for now
+        JSON.stringify(razorpayOrder),     // gateway_response: raw response for debugging/audit
+      ]
     );
 
     res.json({
@@ -87,7 +97,7 @@ router.post("/verify", protect, async (req, res) => {
   // Handle explicit failure from frontend (card declined etc.)
   if (failed) {
     await db.promise().query(
-      `UPDATE payment SET status='failed', updated_at=NOW() WHERE order_id=?`,
+      `UPDATE payment_transactions SET status='failed', updated_at=NOW() WHERE order_id=?`,
       [order_id]
     );
     return res.json({ success: false });
@@ -103,7 +113,7 @@ router.post("/verify", protect, async (req, res) => {
 
     if (expectedSignature !== razorpay_signature) {
       await db.promise().query(
-        `UPDATE payment SET status='failed', updated_at=NOW() WHERE order_id=?`,
+        `UPDATE payment_transactions SET status='failed', updated_at=NOW() WHERE order_id=?`,
         [order_id]
       );
       return res.status(400).json({ message: "Payment verification failed" });
@@ -113,7 +123,7 @@ router.post("/verify", protect, async (req, res) => {
     const paymentDetails = await razorpay.payments.fetch(razorpay_payment_id);
 
     await db.promise().query(
-      `UPDATE payment
+      `UPDATE payment_transactions
        SET status='success',
            transaction_id=?,
            payment_method=?,
@@ -154,7 +164,7 @@ router.post(
 
       if (event.event === "payment.failed") {
         await db.promise().query(
-          `UPDATE payment SET status='failed', updated_at=NOW() WHERE transaction_id=?`,
+          `UPDATE payment_transactions SET status='failed', updated_at=NOW() WHERE transaction_id=?`,
           [event.payload.payment.entity.id]
         );
       }
