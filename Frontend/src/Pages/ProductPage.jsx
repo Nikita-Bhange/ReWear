@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useLocation, Link } from "react-router-dom";
+import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCartOutlined } from "@mui/icons-material";
 import ImageSlider from "../Components/ImageSlider";
 import Navbar from "../Components/Navbar.jsx";
-import ChatBox from "../Components/ChatBox.jsx";
 const parseImages = (rawImage) => {
   if (!rawImage) return [];
   if (Array.isArray(rawImage)) return rawImage;
@@ -30,13 +29,8 @@ const parseImages = (rawImage) => {
 const ProductPage = () => {
 
 
-  const sellerId = 21;
-  const currentUserId = 22;
-  const productName = "Product";
-
   const [product, setProduct] = useState({});
-const [chatId, setChatId] = useState(null);
-  const [showChat, setShowChat] = useState(false);
+  const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
   const productId = id || location.state?.productId;
@@ -76,19 +70,10 @@ const [chatId, setChatId] = useState(null);
 
  const handleOpenChat = async () => {
   try {
-      const sellerId = product?.seller_id;
     const productId = product?.id;
-    const buyerId = 22;
     const response = await axios.post(
-      
       "http://localhost:8000/api/chat/create",
-      {
-        
-       buyerId,
-       sellerId,
-       productId
-      },
-      
+      { productId },
       {
         withCredentials: true,
       }
@@ -96,8 +81,7 @@ const [chatId, setChatId] = useState(null);
 
     console.log("Chat created/found:", response.data);
 
-    setChatId(response.data.chatId);
-    setShowChat(true);
+    navigate(`/chat/${response.data.chatId}`);
 
   } catch (error) {
     console.error(
@@ -155,8 +139,7 @@ const [chatId, setChatId] = useState(null);
                   <button
                     onClick={handleOpenChat}
                     className="flex-1 rounded bg-teal-500 py-2 font-semibold text-white">
-                  
-                    CHAT
+                    Chat with Seller
                   </button>
                 </div>
 
@@ -226,16 +209,6 @@ const [chatId, setChatId] = useState(null);
         </div>
       </div>
 
-      {showChat && (
-  <ChatBox
-    onClose={() => setShowChat(false)}
-    sellerId={sellerId}
-    productId={productId}
-    productName={productName}
-    chatId={chatId}
-    currentUserId={currentUserId}
-  />
-)}
     </>
   );
 };

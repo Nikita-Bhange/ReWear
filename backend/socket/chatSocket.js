@@ -1,178 +1,72 @@
+import jwt from "jsonwebtoken";
+import { db } from "../connect.js";
 
-import {db} from "../connect.js";
-export const initializeChatSocket = (io) => {
-  console.log("🔥 initializeChatSocket CALLED");
-    io.on("connection", (socket) => {
+const getCookie = (header = "", name) => {
+  const item = header.split(";").map((value) => value.trim()).find((value) => value.startsWith(`${name}=`));
+  return item ? decodeURIComponent(item.slice(name.length + 1)) : null;
+};
 
-        console.log("User connected:", socket.id);
-
-
-        // Join chat room
-        socket.on("join_chat", (chatId) => {
-              socket.join(`chat_${chatId}`);
-               console.log(
-                `Socket ${socket.id} joined chat ${chatId}`
-            );
-     });
-
-
-        // Send message
-        socket.on("send_message", async (data) => {
-              try {
-                     const { chatId, senderId, message  } = data;
-
-                if (!chatId || !senderId || !message?.trim()) {
-                    return;
-                }
-                // Save message in MySQL
-                const [result] = await db.promise().query(
-                    `INSERT INTO messages (chat_id, sender_id, message) VALUES (?, ?, ?) `, [
-                        chatId, senderId, message.trim()]
-                );
-
-
-                // Message object
-                const newMessage = {
-                    id: result.insertId,chatId, senderId,  message: message.trim(),created_at: new Date()
-                };
-
-
-                // Send to everyone in this chat
-                 io.to(`chat_${chatId}`).emit("receive_message", newMessage);
-                 } catch (error) {
-                      console.error(  "Socket message error:", error);
-                 }
-        });
-
-        socket.on("join_chat", ({ chatId, userId }) => {
-  try {
-    const roomName = `chat_${chatId}`;
-
-    socket.join(roomName);
-
-    console.log(
-      `User ${userId} joined ${roomName}`
-    );
-
-  } catch (error) {
-    console.error(
-      "Join chat error:",
-      error
-    );
-  }
-});
-
-
-socket.on("send_message", async (data) => {
-
-  try {
-
-    const {
-      chatId,
-      senderId,
-      message
-    } = data;
-
-    console.log("📩 SEND MESSAGE DATA:", {
-      chatId,
-      senderId,
-      message
-    });
-
-    // Validate data
-    if (!chatId || !senderId || !message?.trim()) {
-
-      console.log(
-        "❌ Missing message data"
-      );
-
-      return;
-    }
-
-    // ==============================
-    // SAVE MESSAGE TO MYSQL
-    // ==============================
-
-    const [result] = await db.promise().query(
-      `
-      INSERT INTO messages
-      (chat_id, sender_id, message)
-      VALUES (?, ?, ?)
-      `,
-      [
-        chatId,
-        senderId,
-        message.trim()
-      ]
-    );
-
-    console.log(
-      "✅ MESSAGE SAVED:",
-      result.insertId
-    );
-
-    // ==============================
-    // GET THE INSERTED MESSAGE
-    // ==============================
-
-    const [savedMessages] =
-      await db.promise().query(
-        `
-        SELECT
-          id,
-          chat_id,
-          sender_id,
-          message,
-          created_at,
-          is_read
-        FROM messages
-        WHERE id = ?
-        `,
-        [result.insertId]
-      );
-
-    const savedMessage =
-      savedMessages[0];
-
-    // ==============================
-    // SEND TO EVERYONE IN CHAT
-    // ==============================
-
-    io.to(`chat_${chatId}`).emit(
-      "receive_message",
-      savedMessage
-    );
-
-  } catch (error) {
-
-    console.error(
-      "❌ SEND MESSAGE ERROR:",
-      error
-    );
-
-  }
-
-});
-
-
-socket.on("leave_chat", ({ chatId }) => {
-
-  const roomName = `chat_${chatId}`;
-
-  socket.leave(roomName);
-
-  console.log(
-    `Socket ${socket.id} left ${roomName}`
+const isChatMember = async (chatId, userId) => {
+  const [chats] = await db.promise().query(
+    "SELECT buyer_id, seller_id FROM chats WHERE id = ? LIMIT 1",
+    [chatId]
   );
+  if (!chats.length) return false;
+  return Number(chats[0].buyer_id) === Number(userId) || Number(chats[0].seller_id) === Number(userId);
+};
 
-});
+export const initializeChatSocket = (io) => {
+  io.use((socket, next) => {
+    try {
+      const token = getCookie(socket.handshake.headers.cookie, "token");
+      if (!token) return next(new Error("Not authenticated"));
+      socket.data.user = jwt.verify(token, process.env.JWT_SECRET);
+      return next();
+    } catch {
+      return next(new Error("Invalid token"));
+    }
+  });
 
+  io.on("connection", (socket) => {
+    console.log("Chat socket connected:", socket.id);
 
-        // Disconnect
-         socket.on("disconnect", () => {
-              console.log( "User disconnected:", socket.id );
-        });
-
+    socket.on("join_chat", async ({ chatId }) => {
+      try {
+        if (!(await isChatMember(chatId, socket.data.user.id))) {
+          socket.emit("chat_error", "You are not authorized to join this chat");
+          return;
+        }
+        socket.join(`chat_${chatId}`);
+      } catch (error) {
+        console.error("Join chat error:", error);
+      }
     });
 
+    socket.on("send_message", async ({ chatId, message }) => {
+      try {
+        const senderId = socket.data.user.id;
+        if (!chatId || !message?.trim()) return;
+        if (!(await isChatMember(chatId, senderId))) {
+          socket.emit("chat_error", "You are not authorized to send to this chat");
+          return;
+        }
+
+        // Keep the existing database insert and room broadcast flow.
+        const [result] = await db.promise().query(
+          "INSERT INTO messages (chat_id, sender_id, message) VALUES (?, ?, ?)",
+          [chatId, senderId, message.trim()]
+        );
+        const [savedMessages] = await db.promise().query(
+          "SELECT id, chat_id, sender_id, message, created_at, is_read FROM messages WHERE id = ?",
+          [result.insertId]
+        );
+        io.to(`chat_${chatId}`).emit("receive_message", savedMessages[0]);
+      } catch (error) {
+        console.error("Send message error:", error);
+        socket.emit("chat_error", "Message could not be sent");
+      }
+    });
+
+    socket.on("leave_chat", ({ chatId }) => socket.leave(`chat_${chatId}`));
+  });
 };

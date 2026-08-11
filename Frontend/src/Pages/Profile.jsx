@@ -51,6 +51,11 @@ function Profile() {
                   View History
                 </button>
               </NavLink>
+              <NavLink to="/my-chats">
+                <button className="text-white font-bold bg-teal-600 hover:bg-teal-700 rounded-lg px-6 py-2 transition">
+                  My Chats
+                </button>
+              </NavLink>
               <button className="text-white font-bold bg-red-500 hover:bg-red-600 rounded-lg px-6 py-2 transition" onClick={handleClick}>
                 Logout
               </button>

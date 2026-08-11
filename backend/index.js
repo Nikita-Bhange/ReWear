@@ -35,6 +35,11 @@ const io = new Server(server, {
     }
 });
 
+// Register the Socket.IO chat event handlers on the same HTTP server that
+// listens on port 8000. Without this, clients can connect to Socket.IO but
+// `join_chat` and `send_message` have no backend listeners.
+initializeChatSocket(io);
+
 app.use(cors({
     origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],

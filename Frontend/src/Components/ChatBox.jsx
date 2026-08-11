@@ -5,12 +5,11 @@ import { io } from "socket.io-client";
 
 const SOCKET_URL = "http://localhost:8000";
 
-const ChatBox = ({ onClose, sellerId, productId, productName, chatId, currentUserId,}) => {
+const ChatBox = ({ onClose, otherUsername, productName, chatId, currentUserId }) => {
 console.log("CHAT PROPS:", {
   chatId,
   currentUserId,
-  sellerId,
-  productId,
+  otherUsername,
 });
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -23,185 +22,78 @@ console.log("CHAT PROPS:", {
 const messagesEndRef = useRef(null);
 
 useEffect(() => {
-  if (!chatId || !currentUserId) {
-    console.log("Waiting for chat/user:", {
-      chatId,
-      currentUserId,
-    });
-    return;
-  }
+  if (!chatId || !currentUserId) return;
 
-  let newSocket;
+  let ignore = false;
 
-  const initializeChat = async () => {
+  // Create the socket immediately — no waiting on async work
+  const socket = io(SOCKET_URL, {
+    transports: ["websocket"],
+    withCredentials: true,
+  });
+  socketRef.current = socket;
+
+  socket.on("connect", () => {
+    console.log("Socket connected:", socket.id);
+    socket.emit("join_chat", { chatId });
+  });
+
+  socket.on("receive_message", (newMessage) => {
+    if (ignore) return;
+    const formattedMessage = {
+      id: newMessage.id || Date.now(),
+      sender: Number(newMessage.sender_id) === Number(currentUserId) ? "me" : "other",
+      text: newMessage.message,
+      time: new Date(newMessage.created_at || Date.now()).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+    setMessages((prev) =>
+      prev.some((m) => m.id === formattedMessage.id) ? prev : [...prev, formattedMessage]
+    );
+  });
+
+  socket.on("connect_error", (err) => console.error("Socket connection error:", err));
+  socket.on("disconnect", () => console.log("Socket disconnected"));
+
+  // Fetch chat history independently — doesn't block/delay the socket
+  (async () => {
     try {
-      // =========================
-      // 1. GET PREVIOUS MESSAGES
-      // =========================
-
-      const response = await axios.get(
-        `http://localhost:8000/api/chat/${chatId}/messages`,
-        {
-          withCredentials: true,
-        }
-      );
-
-      const dbMessages = response.data.messages || [];
-
-      const formattedMessages = dbMessages.map((msg) => ({
-        id: msg.id,
-
-        sender:
-          Number(msg.sender_id) === Number(currentUserId)
-            ? "buyer"
-            : "seller",
-
-        text: msg.message,
-
-        time: new Date(msg.created_at).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      }));
-
-      setMessages(formattedMessages);
-
-      // =========================
-      // 2. CONNECT SOCKET.IO
-      // =========================
-
-      newSocket = io(SOCKET_URL, {
-        transports: ["websocket"],
+      const response = await axios.get(`${SOCKET_URL}/api/chat/${chatId}/messages`, {
         withCredentials: true,
       });
-
-      // ⭐ THIS WAS MISSING
-      socketRef.current = newSocket;
-
-      console.log("Connecting to Socket.IO...");
-
-      // =========================
-      // 3. SOCKET CONNECTED
-      // =========================
-
-      newSocket.on("connect", () => {
-        console.log(
-          "Socket connected:",
-          newSocket.id
-        );
-
-        // Join this particular chat room
-        newSocket.emit("join_chat", {
-          chatId,
-          userId: currentUserId,
-        });
-
-        console.log(
-          "Joined chat:",
-          chatId
-        );
-      });
-
-      // =========================
-      // 4. RECEIVE MESSAGE
-      // =========================
-
-      newSocket.on("receive_message", (newMessage) => {
-        console.log(
-          "Received message:",
-          newMessage
-        );
-
-        const formattedMessage = {
-          id: newMessage.id || Date.now(),
-
-          sender:
-            Number(newMessage.sender_id) ===
-            Number(currentUserId)
-              ? "buyer"
-              : "seller",
-
-          text: newMessage.message,
-
-          time: new Date(
-            newMessage.created_at || Date.now()
-          ).toLocaleTimeString([], {
+      if (ignore) return;
+      const dbMessages = response.data.messages || [];
+      const formattedHistory = dbMessages.map((msg) => ({
+          id: msg.id,
+          sender: Number(msg.sender_id) === Number(currentUserId) ? "me" : "other",
+          text: msg.message,
+          time: new Date(msg.created_at).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           }),
-        };
+        }));
 
-        setMessages((prev) => {
-          const alreadyExists = prev.some(
-            (msg) =>
-              msg.id === formattedMessage.id
-          );
-
-          if (alreadyExists) {
-            return prev;
-          }
-
-          return [
-            ...prev,
-            formattedMessage,
-          ];
-        });
-      });
-
-      // =========================
-      // 5. SOCKET ERROR
-      // =========================
-
-      newSocket.on(
-        "connect_error",
-        (error) => {
-          console.error(
-            "Socket connection error:",
-            error
-          );
-        }
-      );
-
-      // =========================
-      // 6. DISCONNECT
-      // =========================
-
-      newSocket.on("disconnect", () => {
-        console.log(
-          "Socket disconnected"
+      // Do not replace a message received through Socket.IO while this
+      // history request was still in flight.
+      setMessages((currentMessages) => {
+        const messagesById = new Map(
+          [...currentMessages, ...formattedHistory].map((item) => [item.id, item])
         );
+        return [...messagesById.values()];
       });
-
-    } catch (error) {
-      console.error(
-        "Error initializing chat:",
-        error
-      );
+    } catch (err) {
+      console.error("Error fetching chat history:", err);
     }
-  };
-
-  initializeChat();
-
-  // =========================
-  // CLEANUP
-  // =========================
+  })();
 
   return () => {
-    if (newSocket) {
-      newSocket.emit("leave_chat", {
-        chatId,
-        userId: currentUserId,
-      });
-
-      newSocket.off("receive_message");
-      newSocket.off("connect");
-      newSocket.off("connect_error");
-      newSocket.off("disconnect");
-
-      newSocket.disconnect();
-    }
-
-    socketRef.current = null;
+    ignore = true;
+    socket.emit("leave_chat", { chatId });
+    socket.off(); // remove all listeners on this exact socket
+    socket.disconnect();
+    if (socketRef.current === socket) socketRef.current = null;
   };
 }, [chatId, currentUserId]);
 //auto scroll
@@ -231,10 +123,10 @@ useEffect(() => {
         console.error(" Chat ID or current user ID is missing");
         return;
     }
+    console.log("Emitting chat message for chat:", chatId);
 
     socket.emit("send_message", {
         chatId: chatId,
-        senderId: currentUserId,
         message: message.trim(),
     });
 
@@ -286,11 +178,11 @@ useEffect(() => {
             <div>
 
               <h2 className="font-semibold text-sm">
-                Chat with Seller
+                Chat with {otherUsername || "User"}
               </h2>
 
               <p className="text-xs text-white/70">
-                Seller ID: {sellerId || "21"}
+                Conversation
               </p>
 
             </div>
@@ -357,7 +249,7 @@ useEffect(() => {
             <div
               key={msg.id}
               className={`flex ${
-                msg.sender === "buyer"
+                msg.sender === "me"
                   ? "justify-end"
                   : "justify-start"
               }`}
@@ -367,7 +259,7 @@ useEffect(() => {
                 className={`
                   max-w-[78%] px-4 py-2.5 rounded-2xl text-sm
                   ${
-                    msg.sender === "buyer"
+                    msg.sender === "me"
                       ? "bg-green-100 text-slate-800 rounded-br-md"
                       : "bg-slate-100 text-slate-700 rounded-bl-md"
                   }
@@ -382,7 +274,7 @@ useEffect(() => {
                   className={`
                     text-[10px] mt-1
                     ${
-                      msg.sender === "buyer"
+                      msg.sender === "me"
                         ? "text-right text-slate-500"
                         : "text-left text-slate-400"
                     }

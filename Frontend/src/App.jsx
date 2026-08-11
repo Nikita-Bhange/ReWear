@@ -14,6 +14,8 @@ import AddToCart from "./Pages/AddToCart.jsx"
 import AdminDashboard from "./Pages/AdminDashboard.jsx"
 import Aboutus from "./Pages/Aboutus.jsx"
 import ProtectedRoute from "./Components/ProtectedRoute.jsx"
+import MyChats from "./Pages/MyChats.jsx"
+import ChatPage from "./Pages/ChatPage.jsx"
 
 
 function App() {
@@ -83,6 +85,8 @@ function App() {
             <AddToCart/>
           </ProtectedRoute>
         }/>
+        <Route path="/my-chats" element={<ProtectedRoute><MyChats /></ProtectedRoute>} />
+        <Route path="/chat/:chatId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       </Routes>
   )
 }
